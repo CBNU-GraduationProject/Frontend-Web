@@ -20,7 +20,11 @@
                   </CRow>
                   <CRow>
                     <div class="table-container">
-                      <table class="table table-hover table-bordered mt-3">
+                      <!-- 로딩 상태에 따라 로딩 메시지 또는 테이블을 표시 -->
+                      <div v-if="isLoading" class="loading-message">
+                        로딩 중...
+                      </div>
+                      <table v-else class="table table-hover table-bordered mt-0">
                         <thead>
                           <tr>
                             <th>No.</th>
@@ -58,10 +62,14 @@ import { CContainer, CRow, CCol, CCard, CCardBody } from '@coreui/vue';
 import AppFooter from '@/components/AppFooter.vue';
 import AppHeader from '@/components/AppHeader.vue';
 import AppSidebar from '@/components/AppSidebar.vue';
+import completeMarker from '../../assets/image/조치 완료.png';
+import inProgressMarker from '../../assets/image/조치중.png';
+import notStartedMarker from '../../assets/image/미조치.png';
 
 // Reactive state
 const risks = ref([]);
 const map = ref(null);
+const isLoading = ref(true); // 로딩 상태를 관리하는 변수
 
 // On component mount
 onMounted(() => {
@@ -106,12 +114,28 @@ function loadMap() {
 function addMarkers() {
   if (map.value) {
     risks.value.forEach(risk => {
+      let imageSrc;
+      if (risk.state === '조치 완료') {
+        imageSrc = completeMarker;
+      } else if (risk.state === '조치중') {
+        imageSrc = inProgressMarker;
+      } else if (risk.state === '미조치') {
+        imageSrc = notStartedMarker;
+      }
+
+      const imageSize = new window.kakao.maps.Size(32, 34);
+      const imageOption = { offset: new window.kakao.maps.Point(16, 34) };
+
       const markerPosition = new window.kakao.maps.LatLng(
         parseFloat(risk.gps.split(',')[0]),
         parseFloat(risk.gps.split(',')[1])
       );
+
+      const markerImage = new window.kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
+
       const marker = new window.kakao.maps.Marker({
-        position: markerPosition
+        position: markerPosition,
+        image: markerImage
       });
 
       marker.setMap(map.value);
@@ -127,6 +151,8 @@ async function fetchHazardData() {
     addMarkers(); // 데이터를 가져온 후 마커를 갱신
   } catch (error) {
     console.error("There was an error fetching the hazard data:", error);
+  } finally {
+    isLoading.value = false; // 데이터를 모두 불러온 후 로딩 상태를 false로 변경
   }
 }
 </script>
@@ -135,6 +161,8 @@ async function fetchHazardData() {
 .wrapper {
   position: relative;
   height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .map-background {
@@ -153,37 +181,49 @@ async function fetchHazardData() {
   top: 20px;
   right: 20px;
   z-index: 1;
-  width: 35%; /* 필요한 경우 크기를 조정할 수 있습니다 */
+  width: 35%; /* 너비를 %로 설정하여 화면 크기에 맞게 유동적으로 조정 */
+  max-width: 500px; /* 최대 너비를 제한 */
+  min-width: 300px; /* 최소 너비를 설정 */
 }
 
 .risk-list-card {
   background-color: rgba(255, 255, 255, 0.9);
   border-radius: 8px;
-  overflow: hidden; /* 테이블 컨테이너가 카드의 경계를 벗어나지 않도록 함 */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .table-container {
   max-height: 400px; /* 원하는 테이블 높이로 조정 */
   overflow-y: auto; /* 테이블이 넘칠 경우 세로 스크롤을 활성화 */
+  flex-grow: 1; /* 테이블 크기가 카드 높이에 맞춰 동적으로 변함 */
 }
 
 .table {
-  width: 100%;
+  width: 100%; /* 테이블 너비가 부모 요소에 맞게 동적으로 조정 */
   border-collapse: collapse;
+  min-width: 300px; /* 최소 너비를 설정하여 테이블의 가독성을 유지 */
+  max-width: 100%; /* 최대 너비를 설정하여 화면을 넘어가지 않도록 제한 */
 }
-th {
-  color: #ffffff;
+
+th, td {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: left;
-}
-td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: left;
+  white-space: nowrap; /* 텍스트가 칸 안에서 줄 바꿈되지 않도록 설정 */
 }
 
 th {
   background-color: #212631;
+  color: #ffffff;
+}
+
+.loading-message {
+  text-align: center;
+  font-size: 1.5rem;
+  padding: 20px;
+  color: #888;
 }
 </style>

@@ -19,7 +19,7 @@
                       class="form-control"
                       id="title-input"
                       placeholder="위험물명 입력"
-                      v-model="form.위험물명"
+                      v-model="form.hazardType"
                     />
                   </div>
                   <div class="form-group">
@@ -28,18 +28,8 @@
                       type="date"
                       class="form-control"
                       id="date-input"
-                      v-model="form.날짜"
+                      v-model="form.dates"
                     />
-                  </div>
-                  <div class="form-group">
-                    <label for="description-input">위험물 상세 정보</label>
-                    <textarea
-                      class="form-control"
-                      id="description-input"
-                      rows="11"
-                      placeholder="위험물설명 입력"
-                      v-model="form.위험물설명"
-                    ></textarea>
                   </div>
                   <div class="form-group">
                     <label for="file-input">위험물 이미지</label>
@@ -47,18 +37,40 @@
                       type="file"
                       class="form-control"
                       id="file-input"
-                      @change="e => form.위험물이미지 = e.target.files[0]"
+                      @change="handleFileChange"
                     />
+                  </div>
+                  <div class="form-group">
+                    <label for="gps-input">GPS 좌표</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="gps-input"
+                      placeholder="GPS 좌표 입력 (예: 37.7749,-122.4194)"
+                      v-model="form.gps"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="state-input">상태</label>
+                    <select
+                      class="form-control"
+                      id="state-input"
+                      v-model="form.state"
+                    >
+                      <option value="조치 완료">조치 완료</option>
+                      <option value="조치중">조치중</option>
+                      <option value="미조치">미조치</option>
+                    </select>
                   </div>
                   <div class="text-right">
                     <button
-                      type="submit"
+                      type="button"
                       class="btn btn-primary"
                       @click="submitForm"
                     >
                       위험물 등록
                     </button>&nbsp;
-                    <button type="button" class="btn btn-secondary">
+                    <button type="button" class="btn btn-secondary" @click="resetForm">
                       취소
                     </button>
                   </div>
@@ -87,34 +99,71 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { CContainer, CRow, CCol, CCard, CCardHeader, CCardBody, CModal, CModalHeader, CModalBody, CModalFooter } from '@coreui/vue'
-import AppFooter from '@/components/AppFooter.vue'
-import AppHeader from '@/components/AppHeader.vue'
-import AppSidebar from '@/components/AppSidebar.vue'
+import { ref } from 'vue';
+import axios from 'axios';
+import { CContainer, CRow, CCol, CCard, CCardHeader, CCardBody, CModal, CModalHeader, CModalBody, CModalFooter } from '@coreui/vue';
+import AppFooter from '@/components/AppFooter.vue';
+import AppHeader from '@/components/AppHeader.vue';
+import AppSidebar from '@/components/AppSidebar.vue';
 
 const form = ref({
-  위험물명: '',
-  날짜: '',
-  위험물설명: '',
-  위험물이미지: null
-})
+  hazardType: '',
+  dates: '',
+  hazardImage: null,
+  gps: '',
+  state: '조치 완료'
+});
 
-const showModal = ref(false)
+const showModal = ref(false);
 
-const submitForm = () => {
-  if (!form.value.위험물명 || !form.value.날짜 || !form.value.위험물설명 || !form.value.위험물이미지) {
-    showModal.value = true
+const handleFileChange = (event) => {
+  form.value.hazardImage = event.target.files[0];
+};
+
+const submitForm = async () => {
+  if (!form.value.hazardType || !form.value.dates || !form.value.hazardImage || !form.value.gps || !form.value.state) {
+    showModal.value = true;
   } else {
-    // 데이터베이스 등록 로직 추가 필요
-    console.log('Form submitted', form.value)
+    try {
+      const formData = new FormData();
+      formData.append('hazardType', form.value.hazardType);
+      formData.append('photo', form.value.hazardImage);
+      formData.append('gps', form.value.gps);
+      formData.append('state', form.value.state);
+      formData.append('dates', new Date(form.value.dates).toISOString().slice(0, 19));
+
+      const response = await axios.post('http://localhost/api/hazarddata/add', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      console.log('Form submitted', response.data);
+      alert('위험물이 등록되었습니다.');
+
+      // 폼 초기화
+      resetForm();
+    } catch (error) {
+      console.error('Error submitting form:', error.response ? error.response.data : error.message);
+    }
   }
-}
+};
 
 const closeModal = () => {
-  showModal.value = false
-}
+  showModal.value = false;
+};
+
+const resetForm = () => {
+  form.value = {
+    hazardType: '',
+    dates: '',
+    hazardImage: null,
+    gps: '',
+    state: '조치 완료',
+  };
+};
 </script>
+  
 
 <style scoped>
 .custom-card {
@@ -133,6 +182,6 @@ const closeModal = () => {
 }
 
 .form-group {
-  margin-bottom: 1.5rem; 
+  margin-bottom: 1.5rem;
 }
 </style>

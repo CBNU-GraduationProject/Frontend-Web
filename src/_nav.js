@@ -27,6 +27,12 @@ export default [
   },
   {
     component: 'CNavItem',
+    name: '데이터 수정',
+    to: '/modify',
+    icon: 'cilList',
+  },
+  {
+    component: 'CNavItem',
     name: '데이터 삭제',
     to: '/delete',
     icon: 'cilXCircle',

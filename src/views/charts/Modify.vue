@@ -9,7 +9,7 @@
             <CCol md="15">
               <CCard class="custom-card">
                 <CCardHeader class="d-flex justify-content-between align-items-center">
-                  <h4 class="card-title">위험물 리스트</h4>
+                  <h4 class="card-title">위험물 수정</h4>
                   <!-- 검색 입력 필드 -->
                   <div class="form-group" style="width: 30%;">
                     <input 
@@ -22,9 +22,9 @@
                 </CCardHeader>
                 <CCardBody>
                   <div v-if="isLoading" class="text-center">
-                    <span>로딩 중...</span> <!-- 로딩 표시 -->
+                    <span>로딩 중...</span>
                   </div>
-                  <div v-else>                  
+                  <div v-else>
                     <table class="table">
                       <thead>
                         <tr>
@@ -33,15 +33,19 @@
                           <th>GPS 좌표</th>
                           <th>상태</th>
                           <th>날짜</th>
+                          <th>수정</th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr v-for="(item, index) in filteredHazardData" :key="index" @click="showImageModal(item)">
+                        <tr v-for="(item, index) in filteredHazardData" :key="index">
                           <td>{{ index + 1 }}</td>
                           <td>{{ item.hazardType }}</td>
                           <td>{{ item.gps }}</td>
                           <td>{{ item.state }}</td>
                           <td>{{ item.dates }}</td>
+                          <td>
+                            <button @click="openEditModal(item)" class="btn btn-outline-primary">수정</button>
+                          </td>
                         </tr>
                       </tbody>
                     </table>
@@ -50,18 +54,29 @@
               </CCard>
             </CCol>
           </CRow>
-          <!-- 모달 창 -->
-          <CModal :visible="showModal" @update:visible="val => showModal.value = val">
+          
+          <!-- Edit Modal -->
+          <CModal :visible="showEditModal" @update:visible="val => showEditModal.value = val">
             <CModalHeader>
-              <h4>위험물 이미지</h4>
+              <h4>위험물 수정</h4>
             </CModalHeader>
             <CModalBody>
-              <img :src="modalImage" alt="위험물 이미지" class="img-fluid" />
+              <div class="form-group">
+                <label for="hazardType">위험물 정보</label>
+                <input v-model="currentItem.hazardType" type="text" id="hazardType" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label for="state">상태</label>
+                <select class="form-control" id="state-input" v-model="currentItem.state">
+                  <option value="조치 완료">조치 완료</option>
+                  <option value="조치중">조치중</option>
+                  <option value="미조치">미조치</option>
+                </select>
+              </div>
             </CModalBody>
             <CModalFooter>
-              <button type="button" class="btn btn-primary" @click="closeModal">
-                닫기
-              </button>
+              <button type="button" class="btn btn-secondary" @click="closeEditModal">닫기</button>
+              <button type="button" class="btn btn-primary" @click="saveChanges">저장</button>
             </CModalFooter>
           </CModal>
         </CContainer>
@@ -81,8 +96,8 @@ import AppSidebar from '@/components/AppSidebar.vue'
 
 const hazardData = ref([])  // 데이터 저장용 ref 변수
 const isLoading = ref(true) // 로딩 상태 관리
-const showModal = ref(false)  // 모달 표시 여부
-const modalImage = ref('')  // 모달에 표시될 이미지 URL
+const showEditModal = ref(false)  // 수정 모달 표시 여부
+const currentItem = ref({})  // 현재 수정 중인 항목
 const searchQuery = ref('')  // 검색어 저장 변수
 
 // 데이터를 서버로부터 불러오는 함수
@@ -92,23 +107,13 @@ async function fetchHazardData() {
     isLoading.value = true;
     
     const response = await axios.get('http://localhost/api/hazarddata')  // API 호출
-    console.log("API Response Data:", response.data); // 응답 데이터 확인용 로그
+    hazardData.value = response.data
 
-    // 응답 데이터를 hazardData에 저장
-    hazardData.value = response.data.map((item, index) => ({
-      ...item,
-      selected: false,
-      no: item.no !== undefined ? item.no : index + 1 // 'no' 속성이 없으면 index를 사용
-    }));
-
-    console.log("Fetched Data:", hazardData.value); // 데이터 확인용 로그
-
-    // 데이터 불러오기 완료 후 로딩 상태 false로 설정
+    // 데이터 로딩 완료 후 로딩 상태 false
     isLoading.value = false;
-
   } catch (error) {
     console.error("데이터를 가져오는 중 오류가 발생했습니다:", error)
-    isLoading.value = false;  // 에러 발생 시에도 로딩 상태 해제
+    isLoading.value = false;  // 오류 발생 시 로딩 상태 해제
   }
 }
 
@@ -117,7 +122,6 @@ const filteredHazardData = computed(() => {
   if (!searchQuery.value) {
     return hazardData.value
   }
-
   return hazardData.value.filter(item => {
     return item.hazardType.includes(searchQuery.value) || 
            item.gps.includes(searchQuery.value) || 
@@ -126,23 +130,30 @@ const filteredHazardData = computed(() => {
   })
 })
 
-// 이미지 모달을 표시하는 함수
-const showImageModal = async (item) => {
-  try {
-    // 이미지 데이터를 서버로부터 가져와서 모달 창에 표시
-    const response = await axios.get(`http://localhost/api/hazarddata/photo/${item.hid}`, { responseType: 'blob' })
-    const imageUrl = URL.createObjectURL(response.data)
-    modalImage.value = imageUrl
-    showModal.value = true
-  } catch (error) {
-    console.error('Error fetching image:', error.response ? error.response.data : error.message)
-  }
+// 수정 모달 열기 함수
+const openEditModal = (item) => {
+  currentItem.value = { ...item }
+  showEditModal.value = true
 }
 
-// 모달 창을 닫는 함수
-const closeModal = () => {
-  showModal.value = false
-  modalImage.value = ''
+// 수정 모달 닫기 함수
+const closeEditModal = () => {
+  showEditModal.value = false
+  currentItem.value = {}
+}
+
+// 변경 사항 저장 함수
+const saveChanges = async () => {
+  try {
+    await axios.put(`http://localhost/api/hazarddata/update/${currentItem.value.hid}`, currentItem.value)
+    const index = hazardData.value.findIndex(item => item.hid === currentItem.value.hid)
+    if (index !== -1) {
+      hazardData.value[index] = { ...currentItem.value }
+    }
+    closeEditModal()
+  } catch (error) {
+    console.error('수정 중 오류가 발생했습니다:', error.response ? error.response.data : error.message)
+  }
 }
 
 // 컴포넌트가 마운트될 때 데이터 불러오기

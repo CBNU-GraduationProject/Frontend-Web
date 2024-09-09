@@ -18,6 +18,9 @@
           <CNavLink href="#/list">List</CNavLink> <!-- 링크 통일 -->
         </CNavItem>
         <CNavItem>
+          <CNavLink href="#/modify">Modify</CNavLink> <!-- 링크 통일 -->
+        </CNavItem>
+        <CNavItem>
           <CNavLink href="#/delete">Delete</CNavLink> <!-- 링크 통일 -->
         </CNavItem>
       </CHeaderNav>

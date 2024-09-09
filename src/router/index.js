@@ -33,6 +33,12 @@ const routes = [
     //meta: { requiresAuth: true }
   },
   {
+    path: '/modify', // 최상위 경로로 이동
+    name: 'Modify',
+    component: () => import('@/views/charts/Modify.vue'),
+    //meta: { requiresAuth: true }
+  },
+  {
     path: '/delete', // 최상위 경로로 이동
     name: 'Delete',
     component: () => import('@/views/charts/Delete.vue'),

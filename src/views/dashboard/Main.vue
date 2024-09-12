@@ -221,7 +221,7 @@ onMounted(() => {
                 <CCardHeader>
                   <h4 class="card-title">조치 상태 차트</h4>
                 </CCardHeader>
-                <CCardBody style="width: 80%; height: 80%">
+                <CCardBody class="chart-body">
                   <canvas id="statusChart"></canvas>
                 </CCardBody>
               </CCard>
@@ -304,6 +304,13 @@ onMounted(() => {
 
 
 <style scoped>
+.chart-body {
+  display: flex;
+  justify-content: center; /* 수평 중앙 정렬 */
+  align-items: center;     /* 수직 중앙 정렬 */
+  width: 100%;
+  height: 100%;
+}
 .custom-card {
   margin: 0 auto;
   width: 100%;

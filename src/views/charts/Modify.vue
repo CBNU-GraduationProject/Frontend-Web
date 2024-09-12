@@ -68,7 +68,7 @@
               <div class="form-group">
                 <label for="state">상태</label>
                 <select class="form-control" id="state-input" v-model="currentItem.state">
-                  <option value="조치 완료">조치 완료</option>
+                  <option value="조치완료">조치완료</option>
                   <option value="조치중">조치중</option>
                   <option value="미조치">미조치</option>
                 </select>

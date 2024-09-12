@@ -116,7 +116,7 @@ function addMarkers() {
   if (map.value) {
     risks.value.forEach(risk => {
       let imageSrc;
-      if (risk.state === '조치 완료') {
+      if (risk.state === '조치완료') {
         imageSrc = completeMarker;
       } else if (risk.state === '조치중') {
         imageSrc = inProgressMarker;

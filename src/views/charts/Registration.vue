@@ -57,7 +57,7 @@
                       id="state-input"
                       v-model="form.state"
                     >
-                      <option value="조치 완료">조치 완료</option>
+                      <option value="조치 완료">조치완료</option>
                       <option value="조치중">조치중</option>
                       <option value="미조치">미조치</option>
                     </select>
@@ -111,7 +111,7 @@ const form = ref({
   dates: '',
   hazardImage: null,
   gps: '',
-  state: '조치 완료'
+  state: '조치완료'
 });
 
 const showModal = ref(false);
@@ -159,7 +159,7 @@ const resetForm = () => {
     dates: '',
     hazardImage: null,
     gps: '',
-    state: '조치 완료',
+    state: '조치완료',
   };
 };
 </script>

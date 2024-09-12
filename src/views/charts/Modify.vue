@@ -98,7 +98,7 @@ import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { CContainer, CRow, CCol, CCard, CCardHeader, CCardBody, CModal, CModalHeader, CModalBody, CModalFooter } from '@coreui/vue'
 import AppFooter from '@/components/AppFooter.vue'
-import AppHeader from '@/componaents/AppHeader.vue'
+import AppHeader from '@/components/AppHeader.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 
 const hazardData = ref([])  // 데이터 저장용 ref 변수

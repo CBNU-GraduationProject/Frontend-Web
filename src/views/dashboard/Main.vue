@@ -174,10 +174,10 @@ onMounted(() => {
             <CCol md="6" class="chart-col">
               <CCard class="custom-card">
                 <CCardHeader>
-                  <h4 class="card-title">조치 상태 차트</h4>
+                  <h4 class="card-title">위험물 종류 차트</h4>
                 </CCardHeader>
                 <CCardBody>
-                  <canvas id="statusChart"></canvas>
+                  <canvas id="typeChart"></canvas>
                 </CCardBody>
               </CCard>
             </CCol>
@@ -196,32 +196,35 @@ onMounted(() => {
             <CCol md="6" class="chart-col">
               <CCard class="custom-card">
                 <CCardHeader>
-                  <h4 class="card-title">위험물 종류 차트</h4>
+                  <h4 class="card-title">조치 상태 차트</h4>
                 </CCardHeader>
-                <CCardBody>
-                  <canvas id="typeChart"></canvas>
+                <CCardBody style="width: 80%; height: 80%">
+                  <canvas id="statusChart"></canvas>
                 </CCardBody>
               </CCard>
             </CCol>
 
+            
+
             <CCol md="6" class="chart-col">
               <CCard class="custom-card">
-                <CCardHeader>
+                <CCardHeader class="d-flex justify-content-between align-items-center">
                   <h4 class="card-title">위험물 리스트</h4>
-                  <div class="form-group" style="width: 100%;">
-                    <input
-                      type="text"
-                      class="form-control"
-                      placeholder="검색어를 입력하세요..."
+                  <!-- 검색 입력 필드 -->
+                  <div class="form-group" style="width: 30%;">
+                    <input 
+                      type="text" 
+                      class="form-control" 
+                      placeholder="검색어를 입력하세요..." 
                       v-model="searchQuery"
                     />
                   </div>
                 </CCardHeader>
                 <CCardBody>
                   <div v-if="isLoading" class="text-center">
-                    <span>로딩 중...</span>
+                    <span>로딩 중...</span> <!-- 로딩 표시 -->
                   </div>
-                  <div v-else>
+                  <div v-else>                  
                     <table class="table">
                       <thead>
                         <tr>
@@ -233,7 +236,7 @@ onMounted(() => {
                         </tr>
                       </thead>
                       <tbody>
-                        <tr v-for="(item, index) in filteredHazardData" :key="index">
+                        <tr v-for="(item, index) in filteredHazardData" :key="index" @click="showImageModal(item)">
                           <td>{{ index + 1 }}</td>
                           <td>{{ item.hazardType }}</td>
                           <td>{{ item.gps }}</td>

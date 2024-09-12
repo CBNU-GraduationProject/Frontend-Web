@@ -40,7 +40,7 @@
                         </tr>
                       </thead>
                       <tbody>
-                        <tr v-for="(item, index) in filteredHazardData" :key="index">
+                        <tr v-for="(item, index) in paginatedHazardData" :key="index" @click="showImageModal(item)">
                           <td class="checkbox-cell">
                             <input type="checkbox" v-model="item.selected" />
                           </td>
@@ -52,6 +52,12 @@
                         </tr>
                       </tbody>
                     </table>
+                    <!-- 페이지네이션 버튼 -->
+                    <div class="pagination-controls">
+                      <button class="btn btn-outline-secondary" :disabled="currentPage === 1" @click="prevPage">이전</button>
+                      <span>{{ currentPage }} / {{ totalPages }}</span>
+                      <button class="btn btn-outline-secondary" :disabled="currentPage === totalPages" @click="nextPage">다음</button>
+                    </div>
                   </div>
                 </CCardBody>
               </CCard>
@@ -97,7 +103,30 @@ async function fetchHazardData() {
     isLoading.value = false
   }
 }
+// 페이지네이션 상태 관리
+const currentPage = ref(1)  // 현재 페이지
+const itemsPerPage = ref(10)  // 한 페이지에 보여줄 아이템 수
+const totalPages = computed(() => Math.ceil(filteredHazardData.value.length / itemsPerPage.value))  // 총 페이지 수
 
+// 이전 페이지로 이동
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+  }
+}
+
+// 다음 페이지로 이동
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+  }
+}
+// 페이지네이션 적용된 데이터 계산
+const paginatedHazardData = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  const end = start + itemsPerPage.value
+  return filteredHazardData.value.slice(start, end)
+})
 // 필터링된 데이터 계산
 const filteredHazardData = computed(() => {
   if (!searchQuery.value) {
@@ -210,5 +239,15 @@ async function deleteSelectedItems() {
   height: 200px;
   font-size: 1.5rem;
   color: #888;
+}
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.pagination-controls button {
+  margin: 0 10px;
 }
 </style>

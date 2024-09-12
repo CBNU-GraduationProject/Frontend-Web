@@ -17,6 +17,10 @@ const statusChartInstance = ref(null) // 조치 상태 차트 인스턴스
 const typeChartInstance = ref(null) // 위험물 종류 차트 인스턴스
 const dateChartInstance = ref(null) // 날짜별 데이터 차트 인스턴스
 
+// 페이지네이션 관련 변수
+const currentPage = ref(1)  // 현재 페이지
+const itemsPerPage = ref(10)  // 페이지당 표시할 항목 수
+
 // 데이터를 서버로부터 불러오는 함수
 async function fetchHazardData() {
   try {
@@ -46,6 +50,25 @@ const filteredHazardData = computed(() => {
            item.dates.includes(searchQuery.value)
   })
 })
+
+// 페이지별로 표시할 데이터를 계산
+const paginatedHazardData = computed(() => {
+  const startIndex = (currentPage.value - 1) * itemsPerPage.value
+  const endIndex = startIndex + itemsPerPage.value
+  return filteredHazardData.value.slice(startIndex, endIndex)
+})
+
+// 총 페이지 수 계산
+const totalPages = computed(() => {
+  return Math.ceil(filteredHazardData.value.length / itemsPerPage.value)
+})
+
+// 페이지를 변경하는 함수
+function changePage(page) {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+  }
+}
 
 // 차트를 그리는 함수 (조치 상태)
 function renderStatusChart(data) {
@@ -204,8 +227,6 @@ onMounted(() => {
               </CCard>
             </CCol>
 
-            
-
             <CCol md="6" class="chart-col">
               <CCard class="custom-card">
                 <CCardHeader class="d-flex justify-content-between align-items-center">
@@ -222,7 +243,7 @@ onMounted(() => {
                 </CCardHeader>
                 <CCardBody>
                   <div v-if="isLoading" class="text-center">
-                    <span>로딩 중...</span> <!-- 로딩 표시 -->
+                    <span>로딩 중...</span>
                   </div>
                   <div v-else>                  
                     <table class="table">
@@ -236,8 +257,8 @@ onMounted(() => {
                         </tr>
                       </thead>
                       <tbody>
-                        <tr v-for="(item, index) in filteredHazardData" :key="index" @click="showImageModal(item)">
-                          <td>{{ index + 1 }}</td>
+                        <tr v-for="(item, index) in paginatedHazardData" :key="index">
+                          <td>{{ index + 1 + (currentPage - 1) * itemsPerPage }}</td>
                           <td>{{ item.hazardType }}</td>
                           <td>{{ item.gps }}</td>
                           <td>{{ item.state }}</td>
@@ -245,6 +266,30 @@ onMounted(() => {
                         </tr>
                       </tbody>
                     </table>
+
+                    <!-- 페이지네이션 -->
+                    <nav aria-label="Page navigation">
+                      <ul class="pagination justify-content-center">
+                        <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                          <button class="page-link" @click="changePage(currentPage - 1)" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                          </button>
+                        </li>
+                        <li 
+                          v-for="page in totalPages" 
+                          :key="page" 
+                          class="page-item" 
+                          :class="{ active: page === currentPage }"
+                        >
+                          <button class="page-link" @click="changePage(page)">{{ page }}</button>
+                        </li>
+                        <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                          <button class="page-link" @click="changePage(currentPage + 1)" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                          </button>
+                        </li>
+                      </ul>
+                    </nav>
                   </div>
                 </CCardBody>
               </CCard>
@@ -256,6 +301,7 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
 
 <style scoped>
 .custom-card {

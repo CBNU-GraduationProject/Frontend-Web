@@ -36,8 +36,8 @@
                         </tr>
                       </thead>
                       <tbody>
-                        <tr v-for="(item, index) in filteredHazardData" :key="index" @click="showImageModal(item)">
-                          <td>{{ index + 1 }}</td>
+                        <tr v-for="(item, index) in paginatedHazardData" :key="index" @click="showImageModal(item)">
+                          <td>{{ index + 1 + (currentPage - 1) * itemsPerPage }}</td>
                           <td>{{ item.hazardType }}</td>
                           <td>{{ item.gps }}</td>
                           <td>{{ item.state }}</td>
@@ -45,6 +45,12 @@
                         </tr>
                       </tbody>
                     </table>
+                    <!-- 페이지네이션 버튼 -->
+                    <div class="pagination-controls">
+                      <button class="btn btn-outline-secondary" :disabled="currentPage === 1" @click="prevPage">이전</button>
+                      <span>{{ currentPage }} / {{ totalPages }}</span>
+                      <button class="btn btn-outline-secondary" :disabled="currentPage === totalPages" @click="nextPage">다음</button>
+                    </div>
                   </div>
                 </CCardBody>
               </CCard>
@@ -52,7 +58,7 @@
           </CRow>
           <!-- 모달 창 -->
           <CModal :visible="showModal" @update:visible="val => showModal.value = val">
-            <CModalHeader>
+            <CModalHeader :closeButton="false">
               <h4>위험물 이미지</h4>
             </CModalHeader>
             <CModalBody>
@@ -85,30 +91,38 @@ const showModal = ref(false)  // 모달 표시 여부
 const modalImage = ref('')  // 모달에 표시될 이미지 URL
 const searchQuery = ref('')  // 검색어 저장 변수
 
+// 페이지네이션 상태 관리
+const currentPage = ref(1)  // 현재 페이지
+const itemsPerPage = ref(10)  // 한 페이지에 보여줄 아이템 수
+const totalPages = computed(() => Math.ceil(filteredHazardData.value.length / itemsPerPage.value))  // 총 페이지 수
+
+// 이전 페이지로 이동
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+  }
+}
+
+// 다음 페이지로 이동
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+  }
+}
+
 // 데이터를 서버로부터 불러오는 함수
 async function fetchHazardData() {
   try {
-    // 데이터 불러오기 시작 - 로딩 상태 true
     isLoading.value = true;
-    
     const response = await axios.get('http://localhost/api/hazarddata')  // API 호출
-    console.log("API Response Data:", response.data); // 응답 데이터 확인용 로그
-
-    // 응답 데이터를 hazardData에 저장
     hazardData.value = response.data.map((item, index) => ({
       ...item,
-      selected: false,
-      no: item.no !== undefined ? item.no : index + 1 // 'no' 속성이 없으면 index를 사용
+      no: item.no !== undefined ? item.no : index + 1 // 'no' 속성이 없으면 index 사용
     }));
-
-    console.log("Fetched Data:", hazardData.value); // 데이터 확인용 로그
-
-    // 데이터 불러오기 완료 후 로딩 상태 false로 설정
     isLoading.value = false;
-
   } catch (error) {
     console.error("데이터를 가져오는 중 오류가 발생했습니다:", error)
-    isLoading.value = false;  // 에러 발생 시에도 로딩 상태 해제
+    isLoading.value = false;
   }
 }
 
@@ -117,7 +131,6 @@ const filteredHazardData = computed(() => {
   if (!searchQuery.value) {
     return hazardData.value
   }
-
   return hazardData.value.filter(item => {
     return item.hazardType.includes(searchQuery.value) || 
            item.gps.includes(searchQuery.value) || 
@@ -126,16 +139,22 @@ const filteredHazardData = computed(() => {
   })
 })
 
+// 페이지네이션 적용된 데이터 계산
+const paginatedHazardData = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  const end = start + itemsPerPage.value
+  return filteredHazardData.value.slice(start, end)
+})
+
 // 이미지 모달을 표시하는 함수
 const showImageModal = async (item) => {
   try {
-    // 이미지 데이터를 서버로부터 가져와서 모달 창에 표시
     const response = await axios.get(`http://localhost/api/hazarddata/photo/${item.hid}`, { responseType: 'blob' })
     const imageUrl = URL.createObjectURL(response.data)
     modalImage.value = imageUrl
     showModal.value = true
   } catch (error) {
-    console.error('Error fetching image:', error.response ? error.response.data : error.message)
+    console.error('Error fetching image:', error)
   }
 }
 
@@ -153,7 +172,7 @@ onMounted(() => {
 
 <style scoped>
 .custom-card {
-  margin: 0 auto;
+  margin: 0 auto 50px;
   height: 90%;
   width: 90%;
 }
@@ -180,5 +199,16 @@ onMounted(() => {
   height: 200px;
   font-size: 1.5rem;
   color: #888;
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.pagination-controls button {
+  margin: 0 10px;
 }
 </style>

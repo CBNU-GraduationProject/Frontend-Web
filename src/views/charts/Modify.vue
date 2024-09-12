@@ -37,8 +37,8 @@
                         </tr>
                       </thead>
                       <tbody>
-                        <tr v-for="(item, index) in filteredHazardData" :key="index">
-                          <td>{{ index + 1 }}</td>
+                        <tr v-for="(item, index) in paginatedData" :key="index">
+                          <td>{{ (currentPage - 1) * itemsPerPage + index + 1 }}</td>
                           <td>{{ item.hazardType }}</td>
                           <td>{{ item.gps }}</td>
                           <td>{{ item.state }}</td>
@@ -49,6 +49,13 @@
                         </tr>
                       </tbody>
                     </table>
+
+                    <!-- Pagination Controls -->
+                    <div class="pagination-controls">
+                      <button class="btn btn-outline-secondary" :disabled="currentPage === 1" @click="prevPage">이전</button>
+                      <span>{{ currentPage }} / {{ totalPages }}</span>
+                      <button class="btn btn-outline-secondary" :disabled="currentPage === totalPages" @click="nextPage">다음</button>
+                    </div>
                   </div>
                 </CCardBody>
               </CCard>
@@ -91,7 +98,7 @@ import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { CContainer, CRow, CCol, CCard, CCardHeader, CCardBody, CModal, CModalHeader, CModalBody, CModalFooter } from '@coreui/vue'
 import AppFooter from '@/components/AppFooter.vue'
-import AppHeader from '@/components/AppHeader.vue'
+import AppHeader from '@/componaents/AppHeader.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 
 const hazardData = ref([])  // 데이터 저장용 ref 변수
@@ -100,20 +107,20 @@ const showEditModal = ref(false)  // 수정 모달 표시 여부
 const currentItem = ref({})  // 현재 수정 중인 항목
 const searchQuery = ref('')  // 검색어 저장 변수
 
+// Pagination states
+const currentPage = ref(1)
+const itemsPerPage = ref(10)
+
 // 데이터를 서버로부터 불러오는 함수
 async function fetchHazardData() {
   try {
-    // 데이터 불러오기 시작 - 로딩 상태 true
     isLoading.value = true;
-    
     const response = await axios.get('http://localhost/api/hazarddata')  // API 호출
-    hazardData.value = response.data
-
-    // 데이터 로딩 완료 후 로딩 상태 false
+    hazardData.value = response.data;
     isLoading.value = false;
   } catch (error) {
-    console.error("데이터를 가져오는 중 오류가 발생했습니다:", error)
-    isLoading.value = false;  // 오류 발생 시 로딩 상태 해제
+    console.error("데이터를 가져오는 중 오류가 발생했습니다:", error);
+    isLoading.value = false;
   }
 }
 
@@ -129,6 +136,28 @@ const filteredHazardData = computed(() => {
            item.dates.includes(searchQuery.value)
   })
 })
+
+// Calculate pagination
+const totalPages = computed(() => Math.ceil(filteredHazardData.value.length / itemsPerPage.value))
+
+const paginatedData = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  const end = start + itemsPerPage.value
+  return filteredHazardData.value.slice(start, end)
+})
+
+// Pagination controls
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+  }
+}
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+  }
+}
 
 // 수정 모달 열기 함수
 const openEditModal = (item) => {
@@ -164,7 +193,7 @@ onMounted(() => {
 
 <style scoped>
 .custom-card {
-  margin: 0 auto;
+  margin: 0 auto 50px;
   height: 90%;
   width: 90%;
 }
@@ -191,5 +220,16 @@ onMounted(() => {
   height: 200px;
   font-size: 1.5rem;
   color: #888;
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.pagination-controls button {
+  margin: 0 10px;
 }
 </style>

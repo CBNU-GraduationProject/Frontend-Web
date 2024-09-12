@@ -70,6 +70,7 @@ import notStartedMarker from '../../assets/image/미조치.png';
 const risks = ref([]);
 const map = ref(null);
 const isLoading = ref(true); // 로딩 상태를 관리하는 변수
+const kakaoApiKey = import.meta.env.VITE_APP_KAKAOMAP_API_KEY;
 
 // On component mount
 onMounted(() => {
@@ -84,7 +85,7 @@ onMounted(() => {
 // Load Kakao Maps script
 function loadScript() {
   const script = document.createElement("script");
-  script.src = "//dapi.kakao.com/v2/maps/sdk.js?appkey=82cbd113a946e9eaacfc294fdea74478"; // autoload=false로 변경
+  script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoApiKey}&autoload=false`; // autoload=false로 변경
   script.onload = () => {
     window.kakao.maps.load(() => {
       loadMap();
@@ -178,8 +179,8 @@ async function fetchHazardData() {
 
 .overlay-content {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 0;
+  right: 100px;
   z-index: 1;
   width: 35%; /* 너비를 %로 설정하여 화면 크기에 맞게 유동적으로 조정 */
   max-width: 500px; /* 최대 너비를 제한 */
@@ -193,11 +194,12 @@ async function fetchHazardData() {
   display: flex;
   flex-direction: column;
   height: 100%;
+  width: 520px;
 }
 
 .table-container {
-  max-height: 400px; /* 원하는 테이블 높이로 조정 */
-  overflow-y: auto; /* 테이블이 넘칠 경우 세로 스크롤을 활성화 */
+  max-height: 170px; /* 원하는 테이블 높이로 조정 */
+  overflow-x: auto; /* 테이블이 넘칠 경우 세로 스크롤을 활성화 */
   flex-grow: 1; /* 테이블 크기가 카드 높이에 맞춰 동적으로 변함 */
 }
 

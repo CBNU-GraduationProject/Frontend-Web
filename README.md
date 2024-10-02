@@ -1,8 +1,6 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
+관리자페이지 프론트
 =======
 
->>>>>>> d3e3b0e (Update README.md)
 =======
 # Hazard Management System
 

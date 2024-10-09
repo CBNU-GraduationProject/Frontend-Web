@@ -43,6 +43,13 @@
                     </CCol>
                   </CRow>
                 </CForm>
+                <hr />
+                <CRow class="mt-3">
+                  <CCol class="text-center">
+                    <p>Don't have an account?</p>
+                    <CButton color="link" @click="goToSignup">Sign Up</CButton>
+                  </CCol>
+                </CRow>
               </CCardBody>
             </CCard>
           </CCardGroup>
@@ -55,6 +62,7 @@
 <script>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import axios from 'axios';
 
 export default {
   name: 'Login',
@@ -63,22 +71,32 @@ export default {
     const username = ref('');
     const password = ref('');
 
-    const handleLogin = () => {
-      // 간단한 인증 로직 예시
-      if (username.value === '1234' && password.value === '1234') {
-        // 로그인 성공 시 다른 페이지로 리디렉션
-        localStorage.setItem('authToken', 'fake-jwt-token'); // 예시로 토큰 저장
+    const handleLogin = async () => {
+      try {
+        const response = await axios.post('http://localhost:80/api/login', {
+          username: username.value,
+          password: password.value,
+        });
+
+        const token = response.data.token;
+        localStorage.setItem('authToken', token); // Store the token in localStorage
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`; // Set token in the request headers
+
         router.push('/main');
-      } else {
-        // 로그인 실패 처리
+      } catch (error) {
         alert('Invalid credentials');
       }
+    };
+
+    const goToSignup = () => {
+      router.push('/signup'); // 회원가입 페이지로 리디렉션
     };
 
     return {
       username,
       password,
-      handleLogin
+      handleLogin,
+      goToSignup, // 회원가입 함수 추가
     };
   }
 };

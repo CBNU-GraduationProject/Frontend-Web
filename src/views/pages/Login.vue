@@ -36,11 +36,6 @@
                     <CCol xs="6">
                       <CButton color="primary" class="px-4" type="submit">Login</CButton>
                     </CCol>
-                    <CCol xs="6" class="text-right">
-                      <CButton color="link" class="px-0">
-                        Forgot password?
-                      </CButton>
-                    </CCol>
                   </CRow>
                 </CForm>
                 <hr />

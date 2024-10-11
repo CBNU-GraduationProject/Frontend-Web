@@ -7,7 +7,7 @@
       >
     </div>
     <div class="ms-auto">
-      <span class="me-1" target="_blank">Made by Minjae</span>
+      <span class="me-1" target="_blank">Made by Sammaru</span>
     </div>
   </CFooter>
 </template>

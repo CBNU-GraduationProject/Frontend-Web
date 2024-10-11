@@ -29,15 +29,16 @@
                           <tr>
                             <th>No.</th>
                             <th>Date</th>
-                            <th>GPS</th>
                             <th>Information</th>
                           </tr>
                         </thead>
                         <tbody>
-                          <tr v-for="(risk, index) in risks" :key="index">
+                          <tr
+                            v-for="(risk, index) in risks"
+                            :key="index"
+                            @click="onRiskClick(index)" >
                             <td>{{ index + 1 }}</td>
                             <td>{{ risk.dates }}</td>
-                            <td>{{ risk.gps }}</td>
                             <td>{{ risk.hazardType }}</td>
                           </tr>
                         </tbody>
@@ -69,8 +70,10 @@ import notStartedMarker from '../../assets/image/미조치.png';
 // Reactive state
 const risks = ref([]);
 const map = ref(null);
+const markers = ref([]); // 마커 배열 저장
 const isLoading = ref(true); // 로딩 상태를 관리하는 변수
 const kakaoApiKey = import.meta.env.VITE_APP_KAKAOMAP_API_KEY;
+//const largeMarker = ref(null); // 현재 확대된 마커
 
 // On component mount
 onMounted(() => {
@@ -85,7 +88,7 @@ onMounted(() => {
 // Load Kakao Maps script
 function loadScript() {
   const script = document.createElement("script");
-  script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoApiKey}&autoload=false`; // autoload=false로 변경
+  script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoApiKey}&autoload=false`;
   script.onload = () => {
     window.kakao.maps.load(() => {
       loadMap();
@@ -140,6 +143,7 @@ function addMarkers() {
       });
 
       marker.setMap(map.value);
+      markers.value.push(marker); // 마커 배열에 저장
     });
   }
 }
@@ -156,6 +160,31 @@ async function fetchHazardData() {
     isLoading.value = false; // 데이터를 모두 불러온 후 로딩 상태를 false로 변경
   }
 }
+
+// // Handle clicking on a risk in the table
+// function onRiskClick(index) {
+//   if (largeMarker.value) {
+//     // 이전에 클릭한 마커가 있으면 크기를 원래대로 되돌림
+//     largeMarker.value.setImage(largeMarker.value.originalImage);
+//   }
+
+//   const marker = markers.value[index];
+//   const largeImageSize = new window.kakao.maps.Size(48, 50); // 확대된 마커 크기
+//   const largeImageOption = { offset: new window.kakao.maps.Point(24, 50) };
+//   const originalImage = marker.getImage(); // 원래 마커 이미지 저장
+
+//   // 확대된 마커 이미지 생성
+//   const largeMarkerImage = new window.kakao.maps.MarkerImage(
+//     originalImage.src,
+//     largeImageSize,
+//     largeImageOption
+//   );
+
+//   marker.originalImage = originalImage; // 마커 객체에 원래 이미지 저장
+//   marker.setImage(largeMarkerImage); // 마커 크기 확대
+
+//   largeMarker.value = marker; // 현재 확대된 마커 저장
+// }
 </script>
 
 <style scoped>
@@ -168,7 +197,7 @@ async function fetchHazardData() {
 
 .map-background {
   position: absolute;
-  top: 0;
+  top: -15px;
   left: 0;
   right: 0;
   bottom: 0;
@@ -182,7 +211,7 @@ async function fetchHazardData() {
   top: 0;
   right: 100px;
   z-index: 1;
-  width: 35%; /* 너비를 %로 설정하여 화면 크기에 맞게 유동적으로 조정 */
+  width: 25%; /* 너비를 %로 설정하여 화면 크기에 맞게 유동적으로 조정 */
   max-width: 500px; /* 최대 너비를 제한 */
   min-width: 300px; /* 최소 너비를 설정 */
 }
@@ -194,7 +223,7 @@ async function fetchHazardData() {
   display: flex;
   flex-direction: column;
   height: 100%;
-  width: 520px;
+  width: 380px;
 }
 
 .table-container {

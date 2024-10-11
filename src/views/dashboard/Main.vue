@@ -78,16 +78,14 @@ function renderStatusChart(data) {
   }
 
   // 상태별 데이터 개수 계산
-  // 상태별 데이터 개수 계산
-const statusCount = {
-  미조치: data.filter(item => item.state === '미조치').length,
-  조치중: data.filter(item => item.state === '조치중').length,
-  조치완료: data.filter(item => item.state === '조치완료').length, // 공백 수정
-}
-
+  const statusCount = {
+    미조치: data.filter(item => item.state === '미조치').length,
+    조치중: data.filter(item => item.state === '조치중').length,
+    조치완료: data.filter(item => item.state === '조치완료').length,
+  }
 
   statusChartInstance.value = new Chart(ctx, {
-    type: 'pie',
+    type: 'doughnut', // Change to 'doughnut'
     data: {
       labels: ['미조치', '조치중', '조치완료'],
       datasets: [{
@@ -96,29 +94,53 @@ const statusCount = {
         borderColor: ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(75, 192, 192, 1)'],
         borderWidth: 1
       }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top',
+        },
+        tooltip: {
+          callbacks: {
+            label: function(tooltipItem) {
+              const label = tooltipItem.label;
+              const value = tooltipItem.raw;
+              return `${label}: ${value}`;
+            }
+          }
+        }
+      }
     }
   })
 }
 
-// 차트를 그리는 함수 (위험물 종류)
+
 function renderTypeChart(data) {
   const ctx = document.getElementById('typeChart').getContext('2d')
   if (typeChartInstance.value) {
     typeChartInstance.value.destroy()
   }
 
-  const typeCount = {}
+  const coordinateCount = {}
   data.forEach(item => {
-    typeCount[item.hazardType] = (typeCount[item.hazardType] || 0) + 1
+    const key = item.gps; // Using GPS coordinates as the key
+    coordinateCount[key] = (coordinateCount[key] || 0) + 1; // Count occurrences at each coordinate
   })
 
+  // Prepare bubble chart data
+  const bubbleData = Object.keys(coordinateCount).map((gps, index) => ({
+    x: index + 1, // x-axis for spacing
+    y: coordinateCount[gps], // y value as the count of potholes
+    r: Math.sqrt(coordinateCount[gps]) * 10 // Radius based on count
+  }))
+
   typeChartInstance.value = new Chart(ctx, {
-    type: 'bar',
+    type: 'bubble',
     data: {
-      labels: Object.keys(typeCount),
       datasets: [{
-        label: '위험물 종류',
-        data: Object.values(typeCount),
+        label: 'Pothole Count by Coordinates',
+        data: bubbleData,
         backgroundColor: 'rgba(153, 102, 255, 0.2)',
         borderColor: 'rgba(153, 102, 255, 1)',
         borderWidth: 1
@@ -126,13 +148,33 @@ function renderTypeChart(data) {
     },
     options: {
       scales: {
+        x: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return Object.keys(coordinateCount)[value - 1] // Show GPS on x-axis
+            }
+          }
+        },
         y: {
           beginAtZero: true
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const label = Object.keys(coordinateCount)[context.dataIndex]
+              const value = context.raw.y
+              return `${label}: ${value} potholes`
+            }
+          }
         }
       }
     }
   })
 }
+
 
 // 차트를 그리는 함수 (날짜별 데이터)
 function renderDateChart(data) {

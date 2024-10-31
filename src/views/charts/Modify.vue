@@ -11,13 +11,23 @@
                 <CCardHeader class="d-flex justify-content-between align-items-center">
                   <h4 class="card-title">위험물 수정</h4>
                   <!-- 검색 입력 필드 -->
-                  <div class="form-group" style="width: 30%;">
-                    <input 
+                  <div class="d-flex justify-content-between align-items-center" >
+                    <input  
                       type="text" 
                       class="form-control" 
                       placeholder="검색어를 입력하세요..." 
                       v-model="searchQuery"
-                    />
+                    />&nbsp;&nbsp;&nbsp;
+                    <input 
+                      type="date" 
+                      class="form-control" 
+                      v-model="startDate"
+                    />&nbsp;~
+                    <input 
+                      type="date" 
+                      class="form-control" 
+                      v-model="endDate"
+                    />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                   </div>
                 </CCardHeader>
                 <CCardBody>
@@ -106,6 +116,8 @@ const isLoading = ref(true) // 로딩 상태 관리
 const showEditModal = ref(false)  // 수정 모달 표시 여부
 const currentItem = ref({})  // 현재 수정 중인 항목
 const searchQuery = ref('')  // 검색어 저장 변수
+const startDate = ref('')  // 시작 날짜 저장 변수
+const endDate = ref('')  // 종료 날짜 저장 변수
 
 // Pagination states
 const currentPage = ref(1)
@@ -126,16 +138,21 @@ async function fetchHazardData() {
 
 // 필터링된 데이터 계산
 const filteredHazardData = computed(() => {
-  if (!searchQuery.value) {
-    return hazardData.value
-  }
+  
   return hazardData.value.filter(item => {
-    return item.hazardType.includes(searchQuery.value) || 
-           item.gps.includes(searchQuery.value) || 
-           item.state.includes(searchQuery.value) || 
-           item.dates.includes(searchQuery.value)
-  })
-})
+    const matchesSearch = item.hazardType.includes(searchQuery.value) || 
+                          item.gps.includes(searchQuery.value) || 
+                          item.state.includes(searchQuery.value) || 
+                          item.dates.includes(searchQuery.value);
+    
+                          const isWithinDateRange = (!startDate.value || new Date(item.dates) >= new Date(startDate.value)) &&
+                          (!endDate.value || new Date(item.dates) <= new Date(endDate.value));
+
+
+    
+    return matchesSearch && isWithinDateRange;
+  });
+});
 
 // Calculate pagination
 const totalPages = computed(() => Math.ceil(filteredHazardData.value.length / itemsPerPage.value))

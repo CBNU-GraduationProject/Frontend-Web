@@ -9,19 +9,32 @@
             <CCol md="15">
               <CCard class="custom-card">
                 <CCardHeader class="d-flex justify-content-between align-items-center">
-                    <h4 class="card-title">데이터 삭제</h4>
-                    <!-- 검색 입력 필드 -->
-                    <div class="d-flex justify-content-between align-items-center" style="width: 30%;">
-                      <input 
-                        type="text" 
-                        class="form-control" 
-                        placeholder="검색어를 입력하세요..." 
-                        v-model="searchQuery"
-                      />&nbsp;&nbsp;&nbsp;
-                      <button type="button" class="btn btn-secondary update-btn" @click="deleteSelectedItems">
-                          <img src="@/assets/image/delete.png" alt="삭제" class="delete-icon" />
-                      </button>
-                    </div>
+                  <h4 class="card-title">데이터 삭제</h4>
+                  <!-- 검색 입력 필드 -->
+                  <div class="d-flex justify-content-between align-items-center" >
+                    <input  
+                      type="text" 
+                      class="form-control" 
+                      placeholder="검색어를 입력하세요..." 
+                      v-model="searchQuery"
+                    />&nbsp;&nbsp;&nbsp;
+                    <input 
+                      type="date" 
+                      class="form-control" 
+                      v-model="startDate"
+                    />&nbsp;~
+                    <input 
+                      type="date" 
+                      class="form-control" 
+                      v-model="endDate"
+                    />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    <button type="button" class="update-btn1" @click="selectAll" style="width: 50%;">
+                      전체 선택
+                    </button>
+                    <button type="button" class="update-btn2" @click="deleteSelectedItems">
+                      <img src="@/assets/image/delete.png" alt="삭제" class="delete-icon" />
+                    </button>
+                  </div>
                 </CCardHeader>
                 <CCardBody>
                   <div v-if="isLoading" class="text-center">
@@ -80,6 +93,8 @@ import AppSidebar from '@/components/AppSidebar.vue'
 
 const hazardData = ref([])
 const searchQuery = ref('')  // 검색어 저장 변수
+const startDate = ref('')  // 시작 날짜 저장 변수
+const endDate = ref('')  // 종료 날짜 저장 변수
 const isLoading = ref(true)  // 로딩 상태 관리
 
 // 데이터를 서버로부터 불러오는 함수
@@ -87,7 +102,6 @@ async function fetchHazardData() {
   try {
     isLoading.value = true
     const response = await axios.get('http://localhost/api/hazarddata')
-  
 
     // 데이터 매핑
     hazardData.value = response.data.map((item, index) => ({
@@ -95,14 +109,13 @@ async function fetchHazardData() {
       selected: false,
       no: item.no !== undefined ? item.no : index + 1 // 'no' 속성이 없으면 index를 사용
     }))
-
-
   } catch (error) {
     console.error("데이터를 가져오는 중 오류가 발생했습니다:", error)
   } finally {
     isLoading.value = false
   }
 }
+
 // 페이지네이션 상태 관리
 const currentPage = ref(1)  // 현재 페이지
 const itemsPerPage = ref(10)  // 한 페이지에 보여줄 아이템 수
@@ -121,23 +134,26 @@ const nextPage = () => {
     currentPage.value++
   }
 }
+
 // 페이지네이션 적용된 데이터 계산
 const paginatedHazardData = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage.value
   const end = start + itemsPerPage.value
   return filteredHazardData.value.slice(start, end)
 })
+
 // 필터링된 데이터 계산
 const filteredHazardData = computed(() => {
-  if (!searchQuery.value) {
-    return hazardData.value
-  }
-
   return hazardData.value.filter(item => {
-    return item.hazardType.includes(searchQuery.value) || 
-           item.gps.includes(searchQuery.value) || 
-           item.state.includes(searchQuery.value) || 
-           item.dates.includes(searchQuery.value)
+    const matchesSearch = item.hazardType.includes(searchQuery.value) || 
+                          item.gps.includes(searchQuery.value) || 
+                          item.state.includes(searchQuery.value) || 
+                          item.dates.includes(searchQuery.value);
+    
+    const isWithinDateRange = (!startDate.value || new Date(item.dates) >= new Date(startDate.value)) &&
+                              (!endDate.value || new Date(item.dates) <= new Date(endDate.value));
+    
+    return matchesSearch && isWithinDateRange;
   })
 })
 
@@ -147,10 +163,6 @@ onMounted(() => {
 
 // 선택된 항목 삭제 함수
 async function deleteSelectedItems() {
-  hazardData.value.forEach(item => {
-    console.log(`Item HID: ${item.hid}, Selected: ${item.selected}`)
-  })
-
   const itemsToDelete = hazardData.value
     .filter(item => item.selected && item.hid !== undefined)
     .map(item => item.hid)
@@ -173,6 +185,12 @@ async function deleteSelectedItems() {
   // 데이터만 다시 불러옴
   fetchHazardData()
 }
+
+// 전체 선택 함수
+function selectAll() {
+  const allSelected = paginatedHazardData.value.every(item => item.selected);
+  paginatedHazardData.value.forEach(item => item.selected = !allSelected);
+}
 </script>
 
 <style scoped>
@@ -193,9 +211,6 @@ async function deleteSelectedItems() {
   color: #ffffff;
 }
 
-.table-bordered th, .table-bordered td {
-  border: 1px solid #ddd;
-}
 
 .table th,
 .table td {
@@ -204,32 +219,38 @@ async function deleteSelectedItems() {
   padding: 8px;
 }
 
-.table tbody tr:hover {
-  cursor: pointer;
-  background-color: #f5f5f5;
-}
 
 .checkbox-cell {
   text-align: center;
 }
 
-.update-btn {
-  background-color: #a6a6a6;
+.update-btn1 {
+  background-color: #f5f5f5;
   border: none;
-  color: white;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
+  margin-right: 10px;
+  border-radius: 4px;
+  
+}
+.update-btn2 {
+  background-color: #f5f5f5;
+  border: none;
+  cursor: pointer;
   padding: 0;
   border-radius: 4px;
 }
+ .update-btn1:hover  {
+   background-color: #d1d1d1;
+ }
+ .update-btn2:hover  {
+   background-color: #d1d1d1;
+ }
+
+
 
 .delete-icon {
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
 }
 
 .text-center {

@@ -1,9 +1,7 @@
 import { defineComponent, h, onMounted, ref, resolveComponent } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-
 import { CBadge, CSidebarNav, CNavItem, CNavGroup, CNavTitle } from '@coreui/vue'
 import nav from '@/_nav.js'
-
 import simplebar from 'simplebar-vue'
 import 'simplebar-vue/dist/simplebar.min.css'
 
@@ -55,11 +53,15 @@ const AppSidebarNav = defineComponent({
       firstRender.value = false
     })
 
-    const handleLogout = () => {
-      // 로그인 상태 리셋
-      localStorage.removeItem('authToken') // 예: localStorage에서 인증 토큰 삭제
-      router.push('/') // 로그인 페이지로 리디렉션
+    const handleLogout = (event) => {
+      event.preventDefault(); // 기본 동작 방지
+      console.log('Logging out...'); // 로그 확인
+      localStorage.removeItem('authToken'); // 로그아웃 시 토큰 삭제
+      console.log('Token removed:', localStorage.getItem('authToken')); // 토큰 삭제 확인
+      router.push('/'); // 로그아웃 후 메인 페이지로 리디렉션
     }
+    
+    
 
     const renderItem = (item) => {
       if (item.items) {
@@ -91,7 +93,6 @@ const AppSidebarNav = defineComponent({
             {
               to: item.to,
               custom: true,
-              onClick: item.name === 'Logout' ? handleLogout : undefined,
             },
             {
               default: (props) =>
@@ -128,15 +129,17 @@ const AppSidebarNav = defineComponent({
                 ),
             },
           )
-        : h(
-            resolveComponent(item.component),
+        : item.name === 'Logout'
+        ? h(
+            'div',
             {
-              as: 'div',
+              class: 'nav-item', // 스타일 유지
+              onClick: handleLogout, // 클릭 시 handleLogout 호출
+              style: { cursor: 'pointer' }, // 클릭 가능하게 스타일 추가
             },
-            {
-              default: () => item.name,
-            },
+            item.name
           )
+        : h(resolveComponent(item.component), { as: 'div' }, { default: () => item.name })
     }
 
     return () =>

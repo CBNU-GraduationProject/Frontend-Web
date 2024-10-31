@@ -44,7 +44,6 @@ export default [
   {
     component: 'CNavItem',
     name: 'Logout',
-    to: '/',
     icon: 'cilUser',
   },
 ]

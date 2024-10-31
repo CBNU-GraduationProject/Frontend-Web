@@ -1,41 +1,10 @@
-import { defineComponent, h, onMounted, ref, resolveComponent } from 'vue'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { CBadge, CSidebarNav, CNavItem, CNavGroup, CNavTitle } from '@coreui/vue'
-import nav from '@/_nav.js'
-import simplebar from 'simplebar-vue'
-import 'simplebar-vue/dist/simplebar.min.css'
-
-const normalizePath = (path) =>
-  decodeURI(path)
-    .replace(/#.*$/, '')
-    .replace(/(index)?\.(html)$/, '')
-
-const isActiveLink = (route, link) => {
-  if (link === undefined) {
-    return false
-  }
-
-  if (route.hash === link) {
-    return true
-  }
-
-  const currentPath = normalizePath(route.path)
-  const targetPath = normalizePath(link)
-
-  return currentPath === targetPath
-}
-
-const isActiveItem = (route, item) => {
-  if (isActiveLink(route, item.to)) {
-    return true
-  }
-
-  if (item.items) {
-    return item.items.some((child) => isActiveItem(route, child))
-  }
-
-  return false
-}
+import { defineComponent, h, onMounted, ref, resolveComponent } from 'vue';
+import { RouterLink, useRouter } from 'vue-router';
+import { CBadge, CSidebarNav, CNavItem, CNavGroup, CNavTitle } from '@coreui/vue';
+import nav from '@/_nav.js';
+import simplebar from 'simplebar-vue';
+import 'simplebar-vue/dist/simplebar.min.css';
+import { logout } from '@/auth'; // auth.js에서 logout 함수 가져오기
 
 const AppSidebarNav = defineComponent({
   name: 'AppSidebarNav',
@@ -45,23 +14,12 @@ const AppSidebarNav = defineComponent({
     CNavTitle,
   },
   setup() {
-    const route = useRoute()
-    const router = useRouter()
-    const firstRender = ref(true)
+    const router = useRouter(); // router 인스턴스 가져오기
+    const firstRender = ref(true);
 
     onMounted(() => {
-      firstRender.value = false
-    })
-
-    const handleLogout = (event) => {
-      event.preventDefault(); // 기본 동작 방지
-      console.log('Logging out...'); // 로그 확인
-      localStorage.removeItem('authToken'); // 로그아웃 시 토큰 삭제
-      console.log('Token removed:', localStorage.getItem('authToken')); // 토큰 삭제 확인
-      router.push('/'); // 로그아웃 후 메인 페이지로 리디렉션
-    }
-    
-    
+      firstRender.value = false;
+    });
 
     const renderItem = (item) => {
       if (item.items) {
@@ -70,9 +28,6 @@ const AppSidebarNav = defineComponent({
           {
             as: 'div',
             compact: true,
-            ...(firstRender.value && {
-              visible: item.items.some((child) => isActiveItem(route, child)),
-            }),
           },
           {
             togglerContent: () => [
@@ -84,7 +39,7 @@ const AppSidebarNav = defineComponent({
             ],
             default: () => item.items.map((child) => renderItem(child)),
           },
-        )
+        );
       }
 
       return item.to
@@ -95,14 +50,21 @@ const AppSidebarNav = defineComponent({
               custom: true,
             },
             {
-              default: (props) =>
-                h(
+              default: (props) => {
+                return h(
                   resolveComponent(item.component),
                   {
                     active: props.isActive,
                     as: 'div',
                     href: props.href,
-                    onClick: () => props.navigate(),
+                    onClick: () => {
+                      if (item.name === 'Logout') {
+                        logout(); // 로그아웃 처리
+                        router.push('/'); // 메인 페이지로 리디렉션
+                      } else {
+                        props.navigate();
+                      }
+                    },
                   },
                   {
                     default: () => [
@@ -126,21 +88,20 @@ const AppSidebarNav = defineComponent({
                         ),
                     ],
                   },
-                ),
+                );
+              },
             },
           )
-        : item.name === 'Logout'
-        ? h(
-            'div',
+        : h(
+            resolveComponent(item.component),
             {
-              class: 'nav-item', // 스타일 유지
-              onClick: handleLogout, // 클릭 시 handleLogout 호출
-              style: { cursor: 'pointer' }, // 클릭 가능하게 스타일 추가
+              as: 'div',
             },
-            item.name
-          )
-        : h(resolveComponent(item.component), { as: 'div' }, { default: () => item.name })
-    }
+            {
+              default: () => item.name,
+            },
+          );
+    };
 
     return () =>
       h(
@@ -151,8 +112,8 @@ const AppSidebarNav = defineComponent({
         {
           default: () => nav.map((item) => renderItem(item)),
         },
-      )
+      );
   },
-})
+});
 
-export { AppSidebarNav }
+export { AppSidebarNav };

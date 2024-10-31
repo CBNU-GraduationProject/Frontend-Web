@@ -87,7 +87,7 @@ async function fetchHazardData() {
   try {
     isLoading.value = true
     const response = await axios.get('http://localhost/api/hazarddata')
-    console.log("API Response Data:", response.data) // 응답 데이터 확인용 로그
+  
 
     // 데이터 매핑
     hazardData.value = response.data.map((item, index) => ({
@@ -96,7 +96,7 @@ async function fetchHazardData() {
       no: item.no !== undefined ? item.no : index + 1 // 'no' 속성이 없으면 index를 사용
     }))
 
-    console.log("Fetched Data:", hazardData.value) // 데이터 확인용 로그
+
   } catch (error) {
     console.error("데이터를 가져오는 중 오류가 발생했습니다:", error)
   } finally {

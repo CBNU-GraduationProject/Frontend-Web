@@ -1,3 +1,5 @@
+import { logout } from './auth';
+
 export default [
   {
     component: 'CNavTitle',
@@ -44,6 +46,11 @@ export default [
   {
     component: 'CNavItem',
     name: 'Logout',
+    to: '/',
     icon: 'cilUser',
+    onClick: (event) => {
+      event.preventDefault(); // 기본 동작 방지
+      logout(); // 로그아웃 함수 호출
+    },
   },
 ]

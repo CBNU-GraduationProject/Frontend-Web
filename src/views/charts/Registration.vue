@@ -130,7 +130,19 @@ const submitForm = async () => {
       formData.append('photo', form.value.hazardImage);
       formData.append('gps', form.value.gps);
       formData.append('state', form.value.state);
-      formData.append('dates', new Date(form.value.dates).toISOString().slice(0, 19));
+
+      // 날짜에 현재 시간을 추가하고 한국 시간(KST)으로 설정
+      const selectedDate = new Date(form.value.dates);
+      const currentTime = new Date();
+      selectedDate.setHours(currentTime.getHours());
+      selectedDate.setMinutes(currentTime.getMinutes());
+      selectedDate.setSeconds(currentTime.getSeconds());
+
+      // 한국 시간(KST)으로 변환 (UTC+9)
+      selectedDate.setHours(selectedDate.getHours() + 9);
+
+      // ISO 형식으로 변환하여 서버에 전송
+      formData.append('dates', selectedDate.toISOString().slice(0, 19));
 
       const response = await axios.post('http://localhost/api/hazarddata/add', formData, {
         headers: {
@@ -148,6 +160,8 @@ const submitForm = async () => {
     }
   }
 };
+
+
 
 const closeModal = () => {
   showModal.value = false;

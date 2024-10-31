@@ -12,6 +12,7 @@
                   <h4 class="card-title">위험물 등록</h4>
                 </CCardHeader>
                 <CCardBody>
+                  <!-- 기타 입력 폼 -->
                   <div class="form-group">
                     <label for="title-input">위험물 정보</label>
                     <input
@@ -40,6 +41,8 @@
                       @change="handleFileChange"
                     />
                   </div>
+
+                  <!-- GPS 입력 필드 및 지도 추가 -->
                   <div class="form-group">
                     <label for="gps-input">GPS 좌표</label>
                     <input
@@ -50,6 +53,8 @@
                       v-model="form.gps"
                     />
                   </div>
+                  <div id="map" class="map"></div> <!-- 카카오맵 추가 -->
+
                   <div class="form-group">
                     <label for="state-input">상태</label>
                     <select
@@ -99,7 +104,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { CContainer, CRow, CCol, CCard, CCardHeader, CCardBody, CModal, CModalHeader, CModalBody, CModalFooter } from '@coreui/vue';
 import AppFooter from '@/components/AppFooter.vue';
@@ -120,6 +125,21 @@ const handleFileChange = (event) => {
   form.value.hazardImage = event.target.files[0];
 };
 
+// 카카오맵 초기화 및 지도 클릭 이벤트
+onMounted(() => {
+  const mapContainer = document.getElementById('map');
+  const mapOption = {
+    center: new window.kakao.maps.LatLng(36.6280, 127.4565), // 기본 좌표 설정 (서울시청)
+    level: 3,
+  };
+  const map = new window.kakao.maps.Map(mapContainer, mapOption);
+
+  window.kakao.maps.event.addListener(map, 'click', (mouseEvent) => {
+    const latlng = mouseEvent.latLng;
+    form.value.gps = `${latlng.getLat()},${latlng.getLng()}`; // 클릭한 위치의 GPS 좌표 입력란에 자동 설정
+  });
+});
+
 const submitForm = async () => {
   if (!form.value.hazardType || !form.value.dates || !form.value.hazardImage || !form.value.gps || !form.value.state) {
     showModal.value = true;
@@ -131,17 +151,13 @@ const submitForm = async () => {
       formData.append('gps', form.value.gps);
       formData.append('state', form.value.state);
 
-      // 날짜에 현재 시간을 추가하고 한국 시간(KST)으로 설정
       const selectedDate = new Date(form.value.dates);
       const currentTime = new Date();
       selectedDate.setHours(currentTime.getHours());
       selectedDate.setMinutes(currentTime.getMinutes());
       selectedDate.setSeconds(currentTime.getSeconds());
-
-      // 한국 시간(KST)으로 변환 (UTC+9)
       selectedDate.setHours(selectedDate.getHours() + 9);
 
-      // ISO 형식으로 변환하여 서버에 전송
       formData.append('dates', selectedDate.toISOString().slice(0, 19));
 
       const response = await axios.post('http://localhost/api/hazarddata/add', formData, {
@@ -153,15 +169,12 @@ const submitForm = async () => {
       console.log('Form submitted', response.data);
       alert('위험물이 등록되었습니다.');
 
-      // 폼 초기화
       resetForm();
     } catch (error) {
       console.error('Error submitting form:', error.response ? error.response.data : error.message);
     }
   }
 };
-
-
 
 const closeModal = () => {
   showModal.value = false;
@@ -177,7 +190,6 @@ const resetForm = () => {
   };
 };
 </script>
-  
 
 <style scoped>
 .custom-card {
@@ -186,13 +198,15 @@ const resetForm = () => {
   width: 90%;
 }
 
+.map {
+  width: 100%;
+  height: 300px;
+  margin-top: 1rem;
+}
+
 .form-control {
   box-shadow: inset 0px 0px 1px 0.1px rgba(0, 0, 0, 0.2);
   width: 100%;
-}
-
-#title-input {
-  width: 20%;
 }
 
 .form-group {

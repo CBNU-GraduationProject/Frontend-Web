@@ -7,10 +7,19 @@
         <CContainer class="px-4" lg>
           <!-- 지도 -->
           <div id="map" class="map-background"></div>
-
-          <!-- 위험물 리스트 -->
-          <CRow class="overlay-content">
+           <!-- 필터 드롭다운 메뉴 -->
+           <CRow class="overlay-content">
             <CCol>
+              <div class="filter-container">
+                <label for="statusFilter">상태 필터:</label>
+                <select id="statusFilter" v-model="statusFilter" @change="filterMarkers">
+                  <option value="">전체</option>
+                  <option value="미조치">미조치</option>
+                  <option value="조치중">조치중</option>
+                  <option value="조치완료">조치완료</option>
+                </select>
+              </div>
+          <!-- 위험물 리스트 -->
               <CCard class="risk-list-card">
                 <CCardBody>
                   <CRow>

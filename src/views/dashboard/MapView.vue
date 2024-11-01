@@ -7,19 +7,26 @@
         <CContainer class="px-4" lg>
           <!-- 지도 -->
           <div id="map" class="map-background"></div>
-           <!-- 필터 드롭다운 메뉴 -->
-           <CRow class="overlay-content">
-            <CCol>
-              <div class="filter-container">
-                <label for="statusFilter">상태 필터:</label>
-                <select id="statusFilter" v-model="statusFilter" @change="filterMarkers">
-                  <option value="">전체</option>
-                  <option value="미조치">미조치</option>
-                  <option value="조치중">조치중</option>
-                  <option value="조치완료">조치완료</option>
-                </select>
-              </div>
+
+          <!-- 포트홀 상태 필터 -->
+          <div class="filter-container">
+            <label>
+              <input type="radio" value="all" v-model="selectedStatus" @change="filterRisks" /> 전체
+            </label>
+            <label>
+              <input type="radio" value="미조치" v-model="selectedStatus" @change="filterRisks" /> 미조치
+            </label>
+            <label>
+              <input type="radio" value="조치중" v-model="selectedStatus" @change="filterRisks" /> 조치중
+            </label>
+            <label>
+              <input type="radio" value="조치완료" v-model="selectedStatus" @change="filterRisks" /> 조치완료
+            </label>
+          </div>
+
           <!-- 위험물 리스트 -->
+          <CRow class="overlay-content">
+            <CCol>
               <CCard class="risk-list-card">
                 <CCardBody>
                   <CRow>
@@ -29,7 +36,6 @@
                   </CRow>
                   <CRow>
                     <div class="table-container">
-                      <!-- 로딩 상태에 따라 로딩 메시지 또는 테이블을 표시 -->
                       <div v-if="isLoading" class="loading-message">
                         로딩 중...
                       </div>
@@ -43,9 +49,9 @@
                         </thead>
                         <tbody>
                           <tr
-                            v-for="(risk, index) in risks"
+                            v-for="(risk, index) in filteredRisks"
                             :key="index"
-                            @click="onRiskClick(index)" >
+                            @click="openModal(risk)">
                             <td>{{ index + 1 }}</td>
                             <td>{{ risk.dates }}</td>
                             <td>{{ risk.hazardType }}</td>
@@ -60,6 +66,27 @@
           </CRow>
         </CContainer>
       </div>
+
+      <!-- 모달 창 -->
+      <CModal :visible="showModal" @update:visible="val => showModal.value = val" @click="showImageModal(item)">
+        <CModalHeader :closeButton="false">
+          <h4>상세 정보</h4>
+        </CModalHeader>
+        <CModalBody>
+          <p><strong>위험물 :</strong> {{ selectedRisk?.hazardType }}</p>
+          <p><strong>위치 :</strong> {{ selectedRisk?.gps }}</p>
+          <p><strong>날짜 :</strong> {{ selectedRisk?.dates }}</p>
+          <p><strong>상태 :</strong> {{ selectedRisk?.state }}</p>
+          <p><strong>사진 정보 :</strong></p>
+          
+          <img :src="modalImage" alt="위험물 이미지" class="img-fluid" />
+        </CModalBody>
+        
+        <CModalFooter>
+          <button type="button" class="btn btn-primary" @click="closeModal">닫기</button>
+        </CModalFooter>
+      </CModal>
+
       <AppFooter />
     </div>
   </div>
@@ -68,7 +95,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
-import { CContainer, CRow, CCol, CCard, CCardBody } from '@coreui/vue';
+import { CContainer, CRow, CCol, CCard, CCardBody, CModal } from '@coreui/vue';
 import AppFooter from '@/components/AppFooter.vue';
 import AppHeader from '@/components/AppHeader.vue';
 import AppSidebar from '@/components/AppSidebar.vue';
@@ -78,12 +105,15 @@ import notStartedMarker from '../../assets/image/미조치.png';
 
 // Reactive state
 const risks = ref([]);
+const filteredRisks = ref([]);
 const map = ref(null);
-const markers = ref([]); // 마커 배열 저장
-const isLoading = ref(true); // 로딩 상태를 관리하는 변수
+const markers = ref([]);
+const isLoading = ref(true);
 const kakaoApiKey = import.meta.env.VITE_APP_KAKAOMAP_API_KEY;
-//const largeMarker = ref(null); // 현재 확대된 마커
-
+const selectedStatus = ref("all"); // 필터 상태 저장
+const selectedRisk = ref(null); // 선택된 위험물의 세부 정보
+const showModal = ref(false); // 모달 초기값 설정
+const modalImage = ref('')  // 모달에 표시될 이미지 URL
 // On component mount
 onMounted(() => {
   fetchHazardData();
@@ -94,6 +124,39 @@ onMounted(() => {
   }
 });
 
+// Show modal with risk details
+function openModal(risk) {
+  selectedRisk.value = risk;
+  showModal.value = true; // 모달 열기
+
+  // 이미지 모달 표시
+  showImageModal(risk); // risk를 item으로 전달
+}
+
+// 이미지 모달을 표시하는 함수
+const showImageModal = async (item) => {
+  if (!item || !item.hid) {
+    console.error('Invalid item:', item);
+    return; // item이 유효하지 않으면 함수 종료
+  }
+
+  try {
+    const response = await axios.get(`http://localhost/api/hazarddata/photo/${item.hid}`, { responseType: 'blob' });
+    const imageUrl = URL.createObjectURL(response.data);
+    modalImage.value = imageUrl;
+    showModal.value = true;
+  } catch (error) {
+    console.error('Error fetching image:', error);
+  }
+};
+
+
+// Close modal
+function closeModal() {
+  selectedRisk.value = null;
+  showModal.value = false; // 모달 닫기
+}
+
 // Load Kakao Maps script
 function loadScript() {
   const script = document.createElement("script");
@@ -103,7 +166,6 @@ function loadScript() {
       loadMap();
     });
   };
-
   document.head.appendChild(script);
 }
 
@@ -117,7 +179,7 @@ function loadMap() {
     };
 
     map.value = new window.kakao.maps.Map(container, options);
-    addMarkers(); // 마커를 추가하는 메서드 호출
+    addMarkers();
   } else {
     console.error("Map container not found");
   }
@@ -125,8 +187,12 @@ function loadMap() {
 
 // Add markers to the map
 function addMarkers() {
-  if (map.value) {
-    risks.value.forEach(risk => {
+  markers.value.forEach(marker => marker.setMap(null)); // 기존 마커 제거
+  markers.value = [];
+
+  risks.value
+    .filter(risk => selectedStatus.value === "all" || risk.state === selectedStatus.value)
+    .forEach(risk => {
       let imageSrc;
       if (risk.state === '조치완료') {
         imageSrc = completeMarker;
@@ -152,9 +218,9 @@ function addMarkers() {
       });
 
       marker.setMap(map.value);
-      markers.value.push(marker); // 마커 배열에 저장
+      marker.addListener("click", () => openModal(risk));
+      markers.value.push(marker);
     });
-  }
 }
 
 // Fetch hazard data from the server
@@ -162,38 +228,19 @@ async function fetchHazardData() {
   try {
     const response = await axios.get('http://localhost/api/hazarddata');
     risks.value = response.data;
-    addMarkers(); // 데이터를 가져온 후 마커를 갱신
+    filterRisks();
   } catch (error) {
     console.error("There was an error fetching the hazard data:", error);
   } finally {
-    isLoading.value = false; // 데이터를 모두 불러온 후 로딩 상태를 false로 변경
+    isLoading.value = false;
   }
 }
 
-// // Handle clicking on a risk in the table
-// function onRiskClick(index) {
-//   if (largeMarker.value) {
-//     // 이전에 클릭한 마커가 있으면 크기를 원래대로 되돌림
-//     largeMarker.value.setImage(largeMarker.value.originalImage);
-//   }
-
-//   const marker = markers.value[index];
-//   const largeImageSize = new window.kakao.maps.Size(48, 50); // 확대된 마커 크기
-//   const largeImageOption = { offset: new window.kakao.maps.Point(24, 50) };
-//   const originalImage = marker.getImage(); // 원래 마커 이미지 저장
-
-//   // 확대된 마커 이미지 생성
-//   const largeMarkerImage = new window.kakao.maps.MarkerImage(
-//     originalImage.src,
-//     largeImageSize,
-//     largeImageOption
-//   );
-
-//   marker.originalImage = originalImage; // 마커 객체에 원래 이미지 저장
-//   marker.setImage(largeMarkerImage); // 마커 크기 확대
-
-//   largeMarker.value = marker; // 현재 확대된 마커 저장
-// }
+// Filter risks by selected status
+function filterRisks() {
+  filteredRisks.value = risks.value.filter(risk => selectedStatus.value === "all" || risk.state === selectedStatus.value);
+  addMarkers(); // 필터에 따라 마커 갱신
+}
 </script>
 
 <style scoped>
@@ -215,55 +262,58 @@ async function fetchHazardData() {
   width: 100%;
 }
 
+.filter-container {
+  position: absolute;
+  color: #000000;
+  left: 20px;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 10px;
+  border-radius: 8px;
+}
+
 .overlay-content {
   position: absolute;
-  top: 0;
-  right: 100px;
+  right: 30px;
   z-index: 1;
-  width: 25%; /* 너비를 %로 설정하여 화면 크기에 맞게 유동적으로 조정 */
-  max-width: 500px; /* 최대 너비를 제한 */
-  min-width: 300px; /* 최소 너비를 설정 */
+  width: 100%;
+  max-width: 54vh;
+  min-width: 50vh;
 }
 
 .risk-list-card {
   background-color: rgba(255, 255, 255, 0.9);
   border-radius: 8px;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 380px;
 }
 
 .table-container {
-  max-height: 170px; /* 원하는 테이블 높이로 조정 */
-  overflow-x: auto; /* 테이블이 넘칠 경우 세로 스크롤을 활성화 */
-  flex-grow: 1; /* 테이블 크기가 카드 높이에 맞춰 동적으로 변함 */
+  max-height: 20vh;
+  overflow-x: auto;
+  flex-grow: 1;
 }
 
 .table {
-  width: 100%; /* 테이블 너비가 부모 요소에 맞게 동적으로 조정 */
+  width: 100%;
   border-collapse: collapse;
-  min-width: 300px; /* 최소 너비를 설정하여 테이블의 가독성을 유지 */
-  max-width: 100%; /* 최대 너비를 설정하여 화면을 넘어가지 않도록 제한 */
+  min-width: 0%;
 }
 
-th, td {
-  border: 1px solid #ddd;
+.table th,
+.table td {
+  text-align: center;
   padding: 8px;
-  text-align: left;
-  white-space: nowrap; /* 텍스트가 칸 안에서 줄 바꿈되지 않도록 설정 */
-}
-
-th {
-  background-color: #212631;
-  color: #ffffff;
 }
 
 .loading-message {
   text-align: center;
-  font-size: 1.5rem;
-  padding: 20px;
-  color: #888;
+  font-size: 1.2em;
+  margin: 20px;
+}
+
+.hazard-image {
+  max-width: 100%;
+  height: auto;
+  margin-top: 10px;
 }
 </style>

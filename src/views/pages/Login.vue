@@ -58,7 +58,8 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
-
+const apiUrl = import.meta.env.VITE_APP_API_URL;  // 환경 변수에서 API URL 가져오기
+console.log(apiUrl);
 export default {
   name: 'Login',
   setup() {
@@ -68,7 +69,7 @@ export default {
 
     const handleLogin = async () => {
       try {
-        const response = await axios.post('http://localhost:80/api/login', {
+        const response = await axios.post(`${apiUrl}/api/login`, {
           username: username.value,
           password: password.value,
         });
@@ -79,7 +80,8 @@ export default {
 
         router.push('/main');
       } catch (error) {
-        alert('Invalid credentials');
+        const errorMessage = error.response?.data?.message || 'Invalid credentials';
+        alert(errorMessage); // Provide the error message from the server response
       }
     };
 

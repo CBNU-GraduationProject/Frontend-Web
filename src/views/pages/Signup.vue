@@ -62,12 +62,13 @@
         </CRow>
       </CContainer>
     </div>
-  </template>
-  
-  <script>
-  import { ref } from 'vue';
+</template>
+
+<script>
+import { ref } from 'vue';
   import { useRouter } from 'vue-router';
   import axios from 'axios';
+  const apiUrl = import.meta.env.VITE_APP_API_URL;
   
   export default {
     name: 'Signup',
@@ -82,19 +83,29 @@
           alert('Passwords do not match');
           return;
         }
-  
+
         try {
-            await axios.post('http://localhost:80/api/signup', {
+          const response = await axios.post(`${apiUrl}/api/signup`, {
             username: username.value,
             password: password.value,
           });
-  
+
+          // response.data를 사용하여 서버 응답에 따른 추가 작업 수행
+          console.log(response.data);  // 예: 서버 응답 로그 출력
           alert('Signup successful! You can now log in.');
           router.push('/'); // 로그인 페이지로 리디렉션
         } catch (error) {
-          alert('Error during signup: ' + error.response.data.message);
+          // 에러 처리
+          const errorMessage = error.response && error.response.data && error.response.data.message
+            ? error.response.data.message
+            : 'Signup failed. Please try again later.';
+          alert('Error during signup: ' + errorMessage);
         }
       };
+
+
+
+
   
       const goToLogin = () => {
         router.push('/'); // 로그인 페이지로 리디렉션
@@ -109,15 +120,15 @@
       };
     }
   };
-  </script>
-  
-  <style scoped>
-  .signup-container {
+</script>
+
+<style lang="scss" scoped>
+.signup-container {
     display: flex;
     justify-content: center;
     align-items: flex-start;
     height: 100vh;
     padding-top: 10%;
   }
-  </style>
-  
+
+</style>

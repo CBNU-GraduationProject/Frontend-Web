@@ -10,8 +10,7 @@
               <CCard class="custom-card">
                 <CCardHeader class="d-flex justify-content-between align-items-center">
                   <h4 class="card-title">위험물 리스트</h4>
-                  <!-- 검색 입력 필드 -->
-                  <div class="d-flex justify-content-between align-items-center" >
+                  <div class="d-flex justify-content-between align-items-center">
                     <input  
                       type="text" 
                       class="form-control" 
@@ -22,7 +21,7 @@
                       type="date" 
                       class="form-control" 
                       v-model="startDate"
-                    />&nbsp;~
+                    />&nbsp;~&nbsp;
                     <input 
                       type="date" 
                       class="form-control" 
@@ -31,10 +30,13 @@
                   </div>
                 </CCardHeader>
                 <CCardBody>
-                  <div v-if="isLoading" class="text-center">
-                    <span>로딩 중...</span> <!-- 로딩 표시 -->
+                  <!-- Skeleton Loader -->
+                  <div v-if="isLoading" class="skeleton-loader">
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line"></div>
                   </div>
-                  <div v-else>                  
+                  <div v-else>
                     <table class="table">
                       <thead>
                         <tr>
@@ -55,7 +57,6 @@
                         </tr>
                       </tbody>
                     </table>
-                    <!-- 페이지네이션 버튼 -->
                     <div class="pagination-controls">
                       <button class="btn btn-outline-secondary" :disabled="currentPage === 1" @click="prevPage">이전</button>
                       <span>{{ currentPage }} / {{ totalPages }}</span>
@@ -66,7 +67,6 @@
               </CCard>
             </CCol>
           </CRow>
-          <!-- 모달 창 -->
           <CModal :visible="showModal" @update:visible="val => showModal.value = val">
             <CModalHeader :closeButton="false">
               <h4>위험물 이미지</h4>
@@ -95,30 +95,30 @@ import AppFooter from '@/components/AppFooter.vue'
 import AppHeader from '@/components/AppHeader.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 
-const hazardData = ref([])  // 데이터 저장용 ref 변수
-const isLoading = ref(true) // 로딩 상태 관리
-const startDate = ref('')  // 시작 날짜 저장 변수
-const endDate = ref('')  // 종료 날짜 저장 변수
-const showModal = ref(false)  // 모달 표시 여부
-const modalImage = ref('')  // 모달에 표시될 이미지 URL
-const searchQuery = ref('')  // 검색어 저장 변수
+const hazardData = ref([])
+const isLoading = ref(true)
+const startDate = ref('')
+const endDate = ref('')
+const showModal = ref(false)
+const modalImage = ref('')
+const searchQuery = ref('')
+const currentPage = ref(1)
+const itemsPerPage = ref(10)
+const apiUrl = import.meta.env.VITE_APP_API_URL
 
-// 페이지네이션 상태 관리
-const currentPage = ref(1)  // 현재 페이지
-const itemsPerPage = ref(10)  // 한 페이지에 보여줄 아이템 수
-const totalPages = computed(() => Math.ceil(filteredHazardData.value.length / itemsPerPage.value))  // 총 페이지 수
+const totalPages = computed(() => Math.ceil(filteredHazardData.value.length / itemsPerPage.value))
 
-// 이전 페이지로 이동
+// 페이지네이션 이동 함수
 const prevPage = () => {
   if (currentPage.value > 1) {
     currentPage.value--
+    fetchHazardData() // 페이지 이동 시 데이터 호출
   }
 }
-
-// 다음 페이지로 이동
 const nextPage = () => {
   if (currentPage.value < totalPages.value) {
     currentPage.value++
+    fetchHazardData() // 페이지 이동 시 데이터 호출
   }
 }
 
@@ -126,7 +126,7 @@ const nextPage = () => {
 async function fetchHazardData() {
   try {
     isLoading.value = true;
-    const response = await axios.get('http://localhost/api/hazarddata')  // API 호출
+    const response = await axios.get(`${apiUrl}/api/hazarddata`)  // API 호출
     hazardData.value = response.data.map((item, index) => ({
       ...item,
       no: item.no !== undefined ? item.no : index + 1 // 'no' 속성이 없으면 index 사용
@@ -138,35 +138,30 @@ async function fetchHazardData() {
   }
 }
 
-// 필터링된 데이터 계산
 const filteredHazardData = computed(() => {
   return hazardData.value.filter(item => {
     const matchesSearch = item.hazardType.includes(searchQuery.value) || 
                           item.gps.includes(searchQuery.value) || 
                           item.state.includes(searchQuery.value) || 
-                          item.dates.includes(searchQuery.value);
-    
-                          const isWithinDateRange = (!startDate.value || new Date(item.dates) >= new Date(startDate.value)) &&
-                          (!endDate.value || new Date(item.dates) <= new Date(endDate.value));
+                          item.dates.includes(searchQuery.value)
 
+    const isWithinDateRange = (!startDate.value || new Date(item.dates) >= new Date(startDate.value)) &&
+                              (!endDate.value || new Date(item.dates) <= new Date(endDate.value))
 
-    
-    return matchesSearch && isWithinDateRange;
-  });
-});
+    return matchesSearch && isWithinDateRange
+  })
+})
 
-
-// 페이지네이션 적용된 데이터 계산
 const paginatedHazardData = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage.value
   const end = start + itemsPerPage.value
   return filteredHazardData.value.slice(start, end)
 })
 
-// 이미지 모달을 표시하는 함수
+// 지연 로딩으로 이미지 불러오기
 const showImageModal = async (item) => {
   try {
-    const response = await axios.get(`http://localhost/api/hazarddata/photo/${item.hid}`, { responseType: 'blob' })
+    const response = await axios.get(`${apiUrl}/api/hazarddata/photo/${item.hid}`, { responseType: 'blob' })
     const imageUrl = URL.createObjectURL(response.data)
     modalImage.value = imageUrl
     showModal.value = true
@@ -175,13 +170,12 @@ const showImageModal = async (item) => {
   }
 }
 
-// 모달 창을 닫는 함수
+// 모달 닫기
 const closeModal = () => {
   showModal.value = false
   modalImage.value = ''
 }
 
-// 컴포넌트가 마운트될 때 데이터 불러오기
 onMounted(() => {
   fetchHazardData()
 })
@@ -209,13 +203,29 @@ onMounted(() => {
   background-color: #f5f5f5;
 }
 
-.text-center {
+/* Skeleton Loader Styles */
+.skeleton-loader {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 200px;
-  font-size: 1.5rem;
-  color: #888;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.skeleton-line {
+  width: 100%;
+  height: 1.2rem;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  animation: skeleton-loading 1s infinite alternate;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-color: #e0e0e0;
+  }
+  100% {
+    background-color: #c0c0c0;
+  }
 }
 
 .pagination-controls {

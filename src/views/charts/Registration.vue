@@ -110,7 +110,7 @@ import { CContainer, CRow, CCol, CCard, CCardHeader, CCardBody, CModal, CModalHe
 import AppFooter from '@/components/AppFooter.vue';
 import AppHeader from '@/components/AppHeader.vue';
 import AppSidebar from '@/components/AppSidebar.vue';
-
+const apiUrl = import.meta.env.VITE_APP_API_URL;
 const form = ref({
   hazardType: '',
   dates: '',
@@ -122,23 +122,34 @@ const form = ref({
 const showModal = ref(false);
 
 const handleFileChange = (event) => {
-  form.value.hazardImage = event.target.files[0];
+  form.value.hazardImage = event.target.files[0];//base64
 };
 
-// 카카오맵 초기화 및 지도 클릭 이벤트
-onMounted(() => {
-  const mapContainer = document.getElementById('map');
-  const mapOption = {
-    center: new window.kakao.maps.LatLng(36.6280, 127.4565), // 기본 좌표 설정 (서울시청)
-    level: 3,
-  };
-  const map = new window.kakao.maps.Map(mapContainer, mapOption);
 
-  window.kakao.maps.event.addListener(map, 'click', (mouseEvent) => {
-    const latlng = mouseEvent.latLng;
-    form.value.gps = `${latlng.getLat()},${latlng.getLng()}`; // 클릭한 위치의 GPS 좌표 입력란에 자동 설정
-  });
+onMounted(() => {
+  if (window.kakao && window.kakao.maps) {
+    const mapContainer = document.getElementById('map');
+    const mapOption = {
+      center: new window.kakao.maps.LatLng(36.6280, 127.4565), // 기본 좌표 설정 (서울시청)
+      level: 3,
+    };
+    const map = new window.kakao.maps.Map(mapContainer, mapOption);
+
+    window.kakao.maps.event.addListener(map, 'click', (mouseEvent) => {
+      const latlng = mouseEvent.latLng;
+
+      // 소수점 4자리로 제한
+      const lat = latlng.getLat().toFixed(4);
+      const lng = latlng.getLng().toFixed(4);
+
+      form.value.gps = `${lat},${lng}`; // 클릭한 위치의 GPS 좌표를 소수점 4자리로 자동 설정
+    });
+  } else {
+    console.error("카카오맵 API가 로드되지 않았습니다.");
+  }
 });
+
+
 
 const submitForm = async () => {
   if (!form.value.hazardType || !form.value.dates || !form.value.hazardImage || !form.value.gps || !form.value.state) {
@@ -151,16 +162,15 @@ const submitForm = async () => {
       formData.append('gps', form.value.gps);
       formData.append('state', form.value.state);
 
+      // 날짜 설정
       const selectedDate = new Date(form.value.dates);
       const currentTime = new Date();
-      selectedDate.setHours(currentTime.getHours());
-      selectedDate.setMinutes(currentTime.getMinutes());
-      selectedDate.setSeconds(currentTime.getSeconds());
-      selectedDate.setHours(selectedDate.getHours() + 9);
+      selectedDate.setHours(currentTime.getHours() + 9); // 한국 시간 맞추기
 
       formData.append('dates', selectedDate.toISOString().slice(0, 19));
 
-      const response = await axios.post('http://localhost/api/hazarddata/add', formData, {
+      // API 요청
+      const response = await axios.post(`${apiUrl}/api/hazarddata/add`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -175,6 +185,7 @@ const submitForm = async () => {
     }
   }
 };
+
 
 const closeModal = () => {
   showModal.value = false;

@@ -38,6 +38,12 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/userlist',
+    name: 'UserList',
+    component: () => import('@/views/charts/UserList.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/modify',
     name: 'Modify',
     component: () => import('@/views/charts/Modify.vue'),

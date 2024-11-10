@@ -20,12 +20,12 @@ const dateChartInstance = ref(null) // 날짜별 데이터 차트 인스턴스
 // 페이지네이션 관련 변수
 const currentPage = ref(1)  // 현재 페이지
 const itemsPerPage = ref(10)  // 페이지당 표시할 항목 수
-
+const apiUrl = import.meta.env.VITE_APP_API_URL;  // 환경 변수에서 API URL 가져오기
 // 데이터를 서버로부터 불러오는 함수
 async function fetchHazardData() {
   try {
     isLoading.value = true;
-    const response = await axios.get('http://localhost/api/hazarddata')
+    const response = await axios.get(`${apiUrl}/api/hazarddata`)
     hazardData.value = response.data
     isLoading.value = false
 

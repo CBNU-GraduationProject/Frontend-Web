@@ -114,6 +114,8 @@ const selectedStatus = ref("all"); // 필터 상태 저장
 const selectedRisk = ref(null); // 선택된 위험물의 세부 정보
 const showModal = ref(false); // 모달 초기값 설정
 const modalImage = ref('')  // 모달에 표시될 이미지 URL
+
+const apiUrl = import.meta.env.VITE_APP_API_URL;  // 환경 변수에서 API URL 가져오기
 // On component mount
 onMounted(() => {
   fetchHazardData();
@@ -141,7 +143,7 @@ const showImageModal = async (item) => {
   }
 
   try {
-    const response = await axios.get(`http://localhost/api/hazarddata/photo/${item.hid}`, { responseType: 'blob' });
+    const response = await axios.get(`${apiUrl}/api/hazarddata/photo/${item.hid}`, { responseType: 'blob' });
     const imageUrl = URL.createObjectURL(response.data);
     modalImage.value = imageUrl;
     showModal.value = true;
@@ -205,10 +207,11 @@ function addMarkers() {
       const imageSize = new window.kakao.maps.Size(32, 34);
       const imageOption = { offset: new window.kakao.maps.Point(16, 34) };
 
-      const markerPosition = new window.kakao.maps.LatLng(
-        parseFloat(risk.gps.split(',')[0]),
-        parseFloat(risk.gps.split(',')[1])
-      );
+      // 소수 4번째 자리까지 반올림
+      const lat = parseFloat(risk.gps.split(',')[0]).toFixed(4); // 위도
+      const lng = parseFloat(risk.gps.split(',')[1]).toFixed(4); // 경도
+
+      const markerPosition = new window.kakao.maps.LatLng(lat, lng);
 
       const markerImage = new window.kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
 
@@ -223,10 +226,11 @@ function addMarkers() {
     });
 }
 
+
 // Fetch hazard data from the server
 async function fetchHazardData() {
   try {
-    const response = await axios.get('http://localhost/api/hazarddata');
+    const response = await axios.get(`${apiUrl}/api/hazarddata`);
     risks.value = response.data;
     filterRisks();
   } catch (error) {

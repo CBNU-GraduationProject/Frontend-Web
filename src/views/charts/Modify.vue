@@ -22,7 +22,7 @@
                       type="date" 
                       class="form-control" 
                       v-model="startDate"
-                    />&nbsp;~
+                    />&nbsp;~&nbsp;
                     <input 
                       type="date" 
                       class="form-control" 
@@ -31,8 +31,10 @@
                   </div>
                 </CCardHeader>
                 <CCardBody>
-                  <div v-if="isLoading" class="text-center">
-                    <span>로딩 중...</span>
+                  <div v-if="isLoading" class="skeleton-loader">
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line"></div>
                   </div>
                   <div v-else>
                     <table class="table">
@@ -73,7 +75,7 @@
           </CRow>
           
           <!-- Edit Modal -->
-          <CModal :visible="showEditModal" @update:visible="val => showEditModal.value = val">
+          <CModal :visible="showEditModal" @update:visible="val => (showEditModal.value = val)">
             <CModalHeader>
               <h4>위험물 수정</h4>
             </CModalHeader>
@@ -96,6 +98,7 @@
               <button type="button" class="btn btn-primary" @click="saveChanges">저장</button>
             </CModalFooter>
           </CModal>
+
         </CContainer>
       </div>
       <AppFooter />
@@ -118,7 +121,7 @@ const currentItem = ref({})  // 현재 수정 중인 항목
 const searchQuery = ref('')  // 검색어 저장 변수
 const startDate = ref('')  // 시작 날짜 저장 변수
 const endDate = ref('')  // 종료 날짜 저장 변수
-
+const apiUrl = import.meta.env.VITE_APP_API_URL;  // 환경 변수에서 API URL 가져오기
 // Pagination states
 const currentPage = ref(1)
 const itemsPerPage = ref(10)
@@ -127,11 +130,14 @@ const itemsPerPage = ref(10)
 async function fetchHazardData() {
   try {
     isLoading.value = true;
-    const response = await axios.get('http://localhost/api/hazarddata')  // API 호출
-    hazardData.value = response.data;
+    const response = await axios.get(`${apiUrl}/api/hazarddata`)  // API 호출
+    hazardData.value = response.data.map((item, index) => ({
+      ...item,
+      no: item.no !== undefined ? item.no : index + 1 // 'no' 속성이 없으면 index 사용
+    }));
     isLoading.value = false;
   } catch (error) {
-    console.error("데이터를 가져오는 중 오류가 발생했습니다:", error);
+    console.error("데이터를 가져오는 중 오류가 발생했습니다:", error)
     isLoading.value = false;
   }
 }
@@ -163,16 +169,17 @@ const paginatedData = computed(() => {
   return filteredHazardData.value.slice(start, end)
 })
 
-// Pagination controls
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++
-  }
-}
-
+// 페이지네이션 이동 함수
 const prevPage = () => {
   if (currentPage.value > 1) {
     currentPage.value--
+    fetchHazardData() // 페이지 이동 시 데이터 호출
+  }
+}
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+    fetchHazardData() // 페이지 이동 시 데이터 호출
   }
 }
 
@@ -191,7 +198,7 @@ const closeEditModal = () => {
 // 변경 사항 저장 함수
 const saveChanges = async () => {
   try {
-    await axios.put(`http://localhost/api/hazarddata/update/${currentItem.value.hid}`, currentItem.value)
+    await axios.put(`${apiUrl}/api/hazarddata/update/${currentItem.value.hid}`, currentItem.value)
     const index = hazardData.value.findIndex(item => item.hid === currentItem.value.hid)
     if (index !== -1) {
       hazardData.value[index] = { ...currentItem.value }
@@ -237,6 +244,30 @@ onMounted(() => {
   height: 200px;
   font-size: 1.5rem;
   color: #888;
+}
+/* Skeleton Loader Styles */
+.skeleton-loader {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.skeleton-line {
+  width: 100%;
+  height: 1.2rem;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  animation: skeleton-loading 1s infinite alternate;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-color: #e0e0e0;
+  }
+  100% {
+    background-color: #c0c0c0;
+  }
 }
 
 .pagination-controls {

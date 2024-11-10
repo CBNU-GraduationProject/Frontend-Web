@@ -29,6 +29,12 @@ export default [
   },
   {
     component: 'CNavItem',
+    name: '사용자 신고 조회',
+    to: '/userlist',
+    icon: 'cilList',
+  },
+  {
+    component: 'CNavItem',
     name: '데이터 수정',
     to: '/modify',
     icon: 'cilList',

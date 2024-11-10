@@ -6,17 +6,16 @@ import autoprefixer from 'autoprefixer'
 export default defineConfig(() => {
   return {
     plugins: [vue()],
-    base: './',
+    base: '/', // 또는 './'이 필요하다면 그대로 유지
     css: {
       postcss: {
         plugins: [
-          autoprefixer({}), // add options if needed
+          autoprefixer({}),
         ],
       },
     },
     resolve: {
       alias: [
-        // webpack path resolve to vitejs
         {
           find: /^~(.*)$/,
           replacement: '$1',
@@ -35,8 +34,8 @@ export default defineConfig(() => {
     server: {
       port: 3000,
       proxy: {
-        // https://vitejs.dev/config/server-options.html
+
       },
-    },
+    }
   }
 })

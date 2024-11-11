@@ -161,7 +161,7 @@ const submitForm = async () => {
       formData.append('photo', form.value.hazardImage);
       formData.append('gps', form.value.gps);
       formData.append('state', form.value.state);
-
+      formData.append('userid', 0);
       // 날짜 설정
       const selectedDate = new Date(form.value.dates);
       const currentTime = new Date();

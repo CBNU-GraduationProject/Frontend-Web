@@ -15,11 +15,18 @@
                     </CInputGroupText>
                     <CFormInput
                       v-model="username"
-                      placeholder="Username"
+                      placeholder="Email"
                       autocomplete="username"
                       required
+                      type="email"
+                      :pattern="emailPattern"
+                      title="Please enter a valid email address (e.g., example@example.com)"
+                      @input="validateEmail"
                     />
                   </CInputGroup>
+                  <div v-if="!isEmailValid" class="text-danger mb-3">
+                    Please enter a valid email address (e.g., example@example.com)
+                  </div>
                   <CInputGroup class="mb-4">
                     <CInputGroupText>
                       <CIcon icon="cil-lock-locked" />
@@ -30,6 +37,8 @@
                       placeholder="Password"
                       autocomplete="current-password"
                       required
+                      :pattern="passwordPattern"
+                      title="Password must be at least 8 characters long and include a lowercase letter, a number, and a special character."
                     />
                   </CInputGroup>
                   <CRow>
@@ -58,14 +67,26 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
-const apiUrl = import.meta.env.VITE_APP_API_URL;  // 환경 변수에서 API URL 가져오기
-console.log(apiUrl);
+const apiUrl = import.meta.env.VITE_APP_API_URL;
+
 export default {
   name: 'Login',
   setup() {
     const router = useRouter();
     const username = ref('');
     const password = ref('');
+    const isEmailValid = ref(true);
+
+    // 이메일 패턴 정규식 (기본적인 이메일 형식 체크)
+    const emailPattern = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
+    // 패스워드 패턴 정규식: 8자 이상, 소문자, 숫자, 특수 문자 포함
+    const passwordPattern = "^(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,}$";
+
+    const validateEmail = () => {
+      // 이메일 형식이 맞는지 확인
+      const regex = new RegExp(emailPattern);
+      isEmailValid.value = regex.test(username.value);
+    };
 
     const handleLogin = async () => {
       try {
@@ -92,8 +113,12 @@ export default {
     return {
       username,
       password,
+      emailPattern, // 이메일 패턴
+      passwordPattern,
+      isEmailValid,
       handleLogin,
-      goToSignup, // 회원가입 함수 추가
+      goToSignup,
+      validateEmail,
     };
   }
 };

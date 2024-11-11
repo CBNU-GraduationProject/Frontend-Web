@@ -97,20 +97,18 @@ const itemsPerPage = 10;  // 페이지당 항목 수 고정
 
 const reportsApiUrl = "https://kickapp-dubydbancaath2e2.koreacentral-01.azurewebsites.net/api/reports";
 
-// 신고 내역을 불러오고 각 report에 이미지 URL을 추가
 const fetchReports = async () => {
   try {
     isLoading.value = true;
     const response = await axios.get(reportsApiUrl);
-    
-    // response.data에는 "반려" 상태인 신고만 포함되어 있음
+    console.log(response.data);  // 응답 데이터 구조를 확인
     reports.value = response.data.map(report => ({
       id: report.id,
       description: report.description,
       latitude: report.latitude,
       longitude: report.longitude,
       createdAt: report.createdAt,
-      imageUrl: `data:image/jpeg;base64,${report.image}`
+      image: report.image, // 이미지 필드가 있는지 확인
     }));
   } catch (error) {
     console.error("신고 내역 조회 오류:", error);
@@ -119,6 +117,7 @@ const fetchReports = async () => {
     isLoading.value = false;
   }
 };
+
 
 // 검색 및 날짜 필터링된 데이터 계산
 const filteredReports = computed(() => {
@@ -139,9 +138,16 @@ const paginatedReports = computed(() => {
 
 // 모달에 이미지 표시 함수
 const showImageModal = (report) => {
-  modalImage.value = report.imageUrl;
-  showModal.value = true;
+  if (report.image) {
+    const imageUrl = `data:image/jpeg;base64,${report.image}`;
+    modalImage.value = imageUrl;
+    showModal.value = true;
+  } else {
+    console.error("이미지 데이터가 없습니다.");
+    alert("이 신고에는 이미지 데이터가 없습니다.");
+  }
 };
+
 
 // 모달 닫기 함수
 const closeModal = () => {
@@ -220,8 +226,9 @@ onMounted(fetchReports);
   cursor: pointer;
 }
 .custom-card {
-  margin: 0 auto;
-  border-radius: 1rem;
+  margin: 0 auto 50px;
+  height: 90%;
+  width: 90%;
 }
 /* Skeleton Loader Styles */
 .skeleton-loader {

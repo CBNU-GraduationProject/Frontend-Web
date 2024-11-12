@@ -49,7 +49,7 @@
                       </thead>
                       <tbody>
                         <tr v-for="(item, index) in paginatedHazardData" :key="index" @click="showImageModal(item)">
-                          <td>{{ index + 1 + (currentPage - 1) * itemsPerPage }}</td>
+                          <td>{{ (currentPage - 1) * itemsPerPage + (index + 1) }}</td> <!-- ID 계산 -->
                           <td>{{ item.hazardType }}</td>
                           <td>{{ item.gps }}</td>
                           <td>{{ item.state }}</td>

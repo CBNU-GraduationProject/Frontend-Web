@@ -209,33 +209,19 @@ onMounted(fetchReports);
 
 
 <style scoped>
-.승인 {
-  background-color: #25ac45;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-.반려 {
-  background-color: #f33f51dd;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 5px;
-  cursor: pointer;
-}
 .custom-card {
   margin: 0 auto 50px;
   height: 90%;
   width: 90%;
 }
-/* Skeleton Loader Styles */
+
 .skeleton-loader {
   display: flex;
   flex-direction: column;
   gap: 1rem;
   padding: 2rem;
+  justify-content: center;
+  align-items: center;
 }
 
 .skeleton-line {
@@ -254,13 +240,33 @@ onMounted(fetchReports);
     background-color: #c0c0c0;
   }
 }
+
+/* 테이블 가운데 정렬 */
+.table {
+  width: 100%;
+  text-align: center;
+}
+
+/* 페이지네이션 컨트롤 */
 .pagination-controls {
   text-align: center;
   margin-top: 1rem;
 }
+
+/* 페이지네이션 버튼 가운데 정렬 */
 .pagination-controls button {
   margin: 0 10px;
 }
+
+/* 모달 이미지 가운데 정렬 */
+.skeleton-loader,
+.skeleton-line,
+.text-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .text-center {
   display: flex;
   justify-content: center;
@@ -269,4 +275,21 @@ onMounted(fetchReports);
   font-size: 1.5rem;
   color: #888;
 }
+
+/* 버튼 스타일 */
+.승인, .반려 {
+  display: inline-block;
+  margin: 0 auto;
+  background-color: #25ac45;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.반려 {
+  background-color: #f33f51dd;
+}
+
 </style>

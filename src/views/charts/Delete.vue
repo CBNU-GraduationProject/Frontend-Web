@@ -59,7 +59,7 @@
                           <td class="checkbox-cell">
                             <input type="checkbox" v-model="item.selected" />
                           </td>
-                          <td>{{ index + 1 }}</td>
+                          <td>{{ (currentPage - 1) * itemsPerPage + (index + 1) }}</td>
                           <td>{{ item.hazardType }}</td>
                           <td>{{ item.gps }}</td>
                           <td>{{ item.state }}</td>
